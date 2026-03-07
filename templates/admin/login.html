@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Login — SoundLight Events</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous">
+</head>
+<body>
+  <div class="loading-overlay" id="loadingOverlay"><div class="spinner"></div></div>
+
+  <div class="login-wrap">
+    <!-- Left visual panel -->
+    <div class="login-logo">
+      <i class="fas fa-bolt"></i>
+      <h1>SoundLight<br>Events</h1>
+      <p>Professional Event Equipment Rental</p>
+    </div>
+
+    <!-- Right form panel -->
+    <div class="login-card">
+      <div class="login-header">
+        <div class="login-logo-icon">⚡</div>
+        <h2>Welcome Back</h2>
+        <p>Sign in to your admin dashboard</p>
+
+        {% if error %}
+        <div class="error-box">
+          <i class="fas fa-exclamation-circle"></i> {{ error }}
+        </div>
+        {% endif %}
+
+        <form method="POST" action="{{ url_for('admin_login') }}">
+          <div class="form-group">
+            <label for="username">Username</label>
+            <div class="input-wrap">
+              <i class="fas fa-user input-icon"></i>
+              <input type="text" id="username" name="username" placeholder="Enter username" required autofocus>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="password">Password</label>
+            <div class="input-wrap">
+              <i class="fas fa-lock input-icon"></i>
+              <input type="password" id="password" name="password" placeholder="••••••••" required>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:13px;font-size:.96rem;border-radius:14px;margin-top:6px;">
+            <i class="fas fa-sign-in-alt"></i> Sign In
+          </button>
+        </form>
+
+        <div class="hint">
+          <i class="fas fa-key"></i> Default: <strong>admin</strong> / <strong>Admin@1234</strong>
+        </div>
+
+        <div style="text-align:center;margin-top:16px;">
+          <a href="{{ url_for('index') }}" style="font-size:0.8rem;color:#78748f;text-decoration:none;transition:color .2s;">
+            <i class="fas fa-arrow-left"></i> Back to Website
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

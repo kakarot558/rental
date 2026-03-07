@@ -1,0 +1,642 @@
+{% extends 'base.html' %}
+{% block title %}Book Equipment{% endblock %}
+{% block content %}
+
+<style>
+/* ── Booking Page Enhancements ── */
+.booking-page {
+  padding-top: 88px;
+  padding-bottom: 80px;
+  background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(201,150,58,.06) 0%, transparent 60%);
+  min-height: 100vh;
+}
+
+.booking-page-header {
+  text-align: center;
+  padding: 48px 28px 40px;
+}
+.booking-page-header .section-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(201,150,58,.08);
+  border: 1px solid rgba(201,150,58,.18);
+  padding: 6px 16px;
+  border-radius: 50px;
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--gold-l);
+  margin-bottom: 16px;
+}
+.booking-page-header h1 {
+  font-size: clamp(1.8rem, 3vw, 2.6rem);
+  color: #f4f0e4;
+  letter-spacing: -.025em;
+  margin-bottom: 10px;
+}
+.booking-page-header p {
+  color: var(--txm);
+  font-size: .95rem;
+  max-width: 460px;
+  margin: 0 auto;
+}
+
+/* ── Steps Bar ── */
+.booking-steps {
+  display: flex;
+  justify-content: center;
+  gap: 0;
+  margin: 0 auto 44px;
+  max-width: 540px;
+  position: relative;
+}
+.booking-steps::before {
+  content: '';
+  position: absolute;
+  top: 19px;
+  left: calc(50% - 130px);
+  right: calc(50% - 130px);
+  height: 1px;
+  background: rgba(201,150,58,.2);
+}
+.step-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  position: relative;
+  z-index: 1;
+}
+.step-bubble {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Sora', sans-serif;
+  font-size: .82rem;
+  font-weight: 800;
+  border: 1.5px solid rgba(201,150,58,.3);
+  background: var(--ob2);
+  color: var(--txm);
+  transition: all .3s ease;
+}
+.step-item.active .step-bubble {
+  background: linear-gradient(135deg, var(--gold-l), #a0701f);
+  color: #06060f;
+  border-color: var(--gold);
+  box-shadow: 0 4px 14px rgba(201,150,58,.35);
+}
+.step-item span {
+  font-size: .68rem;
+  font-weight: 600;
+  color: var(--txm);
+  letter-spacing: .04em;
+  text-align: center;
+}
+.step-item.active span { color: var(--gold); }
+
+/* ── Main Layout ── */
+.booking-wrapper {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 28px;
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 26px;
+  align-items: start;
+}
+
+/* ── Form Card ── */
+.form-card {
+  background: var(--ob2);
+  border: 1px solid var(--gb);
+  border-radius: var(--rx);
+  overflow: hidden;
+}
+
+/* ── Section Dividers ── */
+.form-section-divider {
+  grid-column: 1 / -1;
+  margin-top: 8px;
+}
+.form-section-divider .section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: .67rem;
+  font-weight: 700;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 16px;
+}
+.form-section-divider .section-title i {
+  font-size: .82rem;
+}
+.form-section-divider .section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(201,150,58,.15);
+}
+
+/* ── Form inside card ── */
+.form-card form {
+  padding: 30px;
+}
+.form-card .form-group {
+  margin-bottom: 0;
+}
+.form-card .form-group label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: .78rem;
+  font-weight: 600;
+  color: #b0acaa;
+  letter-spacing: .02em;
+  margin-bottom: 7px;
+}
+.form-card .form-group label i {
+  color: var(--txm);
+  font-size: .76rem;
+  width: 14px;
+}
+.form-card input,
+.form-card select,
+.form-card textarea {
+  background: rgba(255,255,255,.03);
+  border: 1.5px solid var(--gb);
+  border-radius: var(--r);
+  padding: 12px 15px;
+  color: var(--tx);
+  font-family: var(--fb);
+  font-size: .88rem;
+  transition: all var(--t);
+  width: 100%;
+}
+.form-card input:focus,
+.form-card select:focus,
+.form-card textarea:focus {
+  outline: none;
+  border-color: rgba(201,150,58,.5);
+  background: rgba(201,150,58,.03);
+  box-shadow: 0 0 0 3px rgba(201,150,58,.08);
+}
+.form-card input::placeholder,
+.form-card textarea::placeholder { color: var(--txd); }
+.form-card textarea { resize: vertical; min-height: 90px; }
+.form-card select option { background: var(--ob3); color: var(--tx); }
+.form-card .has-error input,
+.form-card .has-error select,
+.form-card .has-error textarea {
+  border-color: rgba(239,68,68,.5) !important;
+}
+.form-error { font-size: .74rem; color: #f87171; font-weight: 500; margin-top: 4px; }
+
+/* ── Availability Result ── */
+.availability-result {
+  display: none;
+  grid-column: 1 / -1;
+  border-radius: var(--r);
+  padding: 12px 16px;
+  font-size: .84rem;
+  font-weight: 600;
+  border: 1px solid;
+  align-items: center;
+  gap: 10px;
+}
+.availability-result.show { display: flex; }
+.avail-ok { background: rgba(34,197,94,.08); color: #4ade80; border-color: rgba(34,197,94,.25); }
+.avail-conflict { background: rgba(239,68,68,.08); color: #f87171; border-color: rgba(239,68,68,.25); }
+.avail-loading { background: rgba(201,150,58,.06); color: var(--gold); border-color: rgba(201,150,58,.2); }
+
+/* ── Price Display Inline ── */
+.price-inline {
+  grid-column: 1 / -1;
+  background: linear-gradient(135deg, rgba(201,150,58,.07), rgba(201,150,58,.03));
+  border: 1px solid rgba(201,150,58,.2);
+  border-radius: var(--rl);
+  padding: 18px 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.price-inline-label {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--txm);
+  font-size: .88rem;
+  font-weight: 500;
+}
+.price-inline-label i { color: var(--gold); }
+.price-inline-value {
+  font-family: var(--fd);
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--gold-l);
+  letter-spacing: -.02em;
+}
+
+/* ── Submit Button ── */
+.btn-submit-full {
+  width: 100%;
+  justify-content: center;
+  padding: 14px 24px;
+  font-size: .96rem;
+  font-weight: 800;
+  border-radius: var(--rl);
+  background: linear-gradient(135deg, var(--gold-l), #a0701f);
+  color: #06060f;
+  box-shadow: 0 4px 22px rgba(201,150,58,.3);
+  letter-spacing: .02em;
+}
+.btn-submit-full:hover {
+  box-shadow: 0 6px 34px rgba(201,150,58,.55) !important;
+  color: #06060f;
+}
+.submit-note {
+  text-align: center;
+  color: var(--txm);
+  font-size: .76rem;
+  margin-top: 10px;
+}
+.submit-note i { color: var(--gold); margin-right: 4px; }
+
+/* ── Sidebar Cards ── */
+.booking-sidebar { display: flex; flex-direction: column; gap: 18px; }
+
+.info-card {
+  background: var(--ob2);
+  border: 1px solid var(--gb);
+  border-radius: var(--rl);
+  overflow: hidden;
+}
+.info-card-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--gb);
+  background: rgba(201,150,58,.025);
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-family: var(--fd);
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+.info-card-body { padding: 18px 20px; }
+
+.price-breakdown .price-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 9px 0;
+  border-bottom: 1px solid rgba(255,255,255,.04);
+  font-size: .84rem;
+}
+.price-breakdown .price-row:last-child { border: none; }
+.price-breakdown .price-row span:first-child { color: var(--txm); }
+.price-breakdown .price-row span:last-child { color: var(--tx); font-weight: 600; }
+.price-breakdown .price-row.total {
+  border-top: 1px solid rgba(201,150,58,.15);
+  border-bottom: none;
+  margin-top: 6px;
+  padding-top: 14px;
+}
+.price-breakdown .price-row.total span:last-child {
+  font-family: var(--fd);
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--gold-l);
+}
+
+.info-list { display: flex; flex-direction: column; gap: 0; }
+.info-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  font-size: .82rem;
+  color: var(--txm);
+  line-height: 1.55;
+  padding: 9px 0;
+  border-bottom: 1px solid rgba(255,255,255,.04);
+}
+.info-list li:last-child { border-bottom: none; }
+.info-list li i {
+  color: var(--gold);
+  flex-shrink: 0;
+  font-size: .78rem;
+  width: 14px;
+  text-align: center;
+  margin-top: 3px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .booking-wrapper { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .booking-steps::before { display: none; }
+  .form-card form { padding: 20px; }
+  .booking-page-header { padding: 36px 18px 28px; }
+}
+</style>
+
+<div class="booking-page">
+
+  <!-- Page Header -->
+  <div class="booking-page-header">
+    <span class="section-label"><i class="fas fa-bolt"></i> Book Now</span>
+    <h1>Reserve Your Equipment</h1>
+    <p>Fill in your event details below and our team will confirm within 24 hours.</p>
+  </div>
+
+  <!-- Steps Progress -->
+  <div class="booking-steps">
+    <div class="step-item active">
+      <div class="step-bubble">1</div>
+      <span>Your Info</span>
+    </div>
+    <div class="step-item active">
+      <div class="step-bubble">2</div>
+      <span>Event Details</span>
+    </div>
+    <div class="step-item active">
+      <div class="step-bubble">3</div>
+      <span>Equipment</span>
+    </div>
+  </div>
+
+  <!-- Main Layout -->
+  <div class="booking-wrapper">
+
+    <!-- LEFT: Main Form -->
+    <div class="form-card">
+      <form method="POST" id="bookingForm" novalidate>
+        <div class="form-grid">
+
+          <!-- ① Customer Info -->
+          <div class="form-section-divider">
+            <div class="section-title">
+              <i class="fas fa-user-circle"></i> Customer Information
+            </div>
+          </div>
+
+          <div class="form-group {{ 'has-error' if errors.get('customer_name') }}">
+            <label for="customer_name"><i class="fas fa-user"></i> Full Name <span style="color:#f87171">*</span></label>
+            <input type="text" id="customer_name" name="customer_name"
+              value="{{ form_data.get('customer_name','') }}"
+              placeholder="Juan dela Cruz" required>
+            {% if errors.get('customer_name') %}<span class="form-error"><i class="fas fa-exclamation-circle"></i> {{ errors.customer_name }}</span>{% endif %}
+          </div>
+
+          <div class="form-group {{ 'has-error' if errors.get('contact_number') }}">
+            <label for="contact_number"><i class="fas fa-phone"></i> Contact Number <span style="color:#f87171">*</span></label>
+            <input type="tel" id="contact_number" name="contact_number"
+              value="{{ form_data.get('contact_number','') }}"
+              placeholder="+63 912 345 6789" required>
+            {% if errors.get('contact_number') %}<span class="form-error"><i class="fas fa-exclamation-circle"></i> {{ errors.contact_number }}</span>{% endif %}
+          </div>
+
+          <div class="form-group {{ 'has-error' if errors.get('email') }}">
+            <label for="email"><i class="fas fa-envelope"></i> Email Address <span style="color:#f87171">*</span></label>
+            <input type="email" id="email" name="email"
+              value="{{ form_data.get('email','') }}"
+              placeholder="juan@example.com" required>
+            {% if errors.get('email') %}<span class="form-error"><i class="fas fa-exclamation-circle"></i> {{ errors.email }}</span>{% endif %}
+          </div>
+
+          <div class="form-group {{ 'has-error' if errors.get('address') }}" style="grid-column:1/-1;">
+            <label for="address"><i class="fas fa-map-marker-alt"></i> Event Venue / Address <span style="color:#f87171">*</span></label>
+            <input type="text" id="address" name="address"
+              value="{{ form_data.get('address','') }}"
+              placeholder="123 Sample Street, Lipa City, Batangas" required>
+            {% if errors.get('address') %}<span class="form-error"><i class="fas fa-exclamation-circle"></i> {{ errors.address }}</span>{% endif %}
+          </div>
+
+          <!-- ② Event Details -->
+          <div class="form-section-divider">
+            <div class="section-title">
+              <i class="fas fa-calendar-star"></i> Event Details
+            </div>
+          </div>
+
+          <div class="form-group {{ 'has-error' if errors.get('event_date') }}">
+            <label for="event_date"><i class="fas fa-calendar-alt"></i> Event Date <span style="color:#f87171">*</span></label>
+            <input type="date" id="event_date" name="event_date"
+              value="{{ form_data.get('event_date','') }}" required>
+            {% if errors.get('event_date') %}<span class="form-error"><i class="fas fa-exclamation-circle"></i> {{ errors.event_date }}</span>{% endif %}
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+            <div class="form-group {{ 'has-error' if errors.get('start_time') }}">
+              <label for="start_time"><i class="fas fa-play-circle"></i> Start Time <span style="color:#f87171">*</span></label>
+              <input type="time" id="start_time" name="start_time"
+                value="{{ form_data.get('start_time','') }}" required>
+              {% if errors.get('start_time') %}<span class="form-error">{{ errors.start_time }}</span>{% endif %}
+            </div>
+            <div class="form-group {{ 'has-error' if errors.get('end_time') }}">
+              <label for="end_time"><i class="fas fa-stop-circle"></i> End Time <span style="color:#f87171">*</span></label>
+              <input type="time" id="end_time" name="end_time"
+                value="{{ form_data.get('end_time','') }}" required>
+              {% if errors.get('end_time') %}<span class="form-error">{{ errors.end_time }}</span>{% endif %}
+            </div>
+          </div>
+
+          <!-- ③ Equipment -->
+          <div class="form-section-divider">
+            <div class="section-title">
+              <i class="fas fa-box-open"></i> Equipment Selection
+            </div>
+          </div>
+
+          <div class="form-group {{ 'has-error' if errors.get('equipment_id') }}" style="grid-column:1/-1;">
+            <label for="equipment_id"><i class="fas fa-music"></i> Select Equipment <span style="color:#f87171">*</span></label>
+            <select id="equipment_id" name="equipment_id" required>
+              <option value="">— Choose Equipment —</option>
+              {% for eq in equipment %}
+              <option value="{{ eq.id }}"
+                data-price="{{ eq.price_per_hour }}"
+                {{ 'selected' if form_data.get('equipment_id') == eq.id|string or pre_eq == eq.id|string }}>
+                {{ eq.name }} — ₱{{ "%.2f"|format(eq.price_per_hour) }}/hr ({{ eq.category|capitalize }})
+              </option>
+              {% endfor %}
+            </select>
+            {% if errors.get('equipment_id') %}<span class="form-error"><i class="fas fa-exclamation-circle"></i> {{ errors.equipment_id }}</span>{% endif %}
+          </div>
+
+          <!-- Availability -->
+          <div id="availabilityResult" class="availability-result" style="grid-column:1/-1;"></div>
+
+          <!-- Estimated Price Inline -->
+          <div class="price-inline">
+            <div class="price-inline-label">
+              <i class="fas fa-receipt"></i>
+              Estimated Total
+              <span style="font-size:.72rem;color:var(--txd);">(based on duration)</span>
+            </div>
+            <span id="estimatedPrice" class="price-inline-value">—</span>
+          </div>
+
+          <!-- Special Instructions -->
+          <div class="form-section-divider">
+            <div class="section-title">
+              <i class="fas fa-comment-dots"></i> Additional Notes
+            </div>
+          </div>
+
+          <div class="form-group" style="grid-column:1/-1;">
+            <label for="special_instructions"><i class="fas fa-sticky-note"></i> Special Instructions <span style="color:var(--txd);font-weight:400;">(Optional)</span></label>
+            <textarea id="special_instructions" name="special_instructions"
+              placeholder="Any special setup, delivery requirements, or event notes...">{{ form_data.get('special_instructions','') }}</textarea>
+          </div>
+
+          <!-- Submit -->
+          <div style="grid-column:1/-1;margin-top:8px;">
+            <button type="submit" class="btn btn-submit-full">
+              <i class="fas fa-paper-plane"></i> Submit Booking Request
+            </button>
+            <p class="submit-note">
+              <i class="fas fa-shield-alt"></i> Your booking is secure and will be reviewed within 24 hours.
+            </p>
+          </div>
+
+        </div>
+      </form>
+    </div>
+
+    <!-- RIGHT: Sidebar -->
+    <aside class="booking-sidebar">
+
+      <!-- Price Breakdown -->
+      <div class="info-card">
+        <div class="info-card-header">
+          <i class="fas fa-calculator"></i> Price Breakdown
+        </div>
+        <div class="info-card-body">
+          <div class="price-breakdown">
+            <div class="price-row">
+              <span>Equipment Rate</span>
+              <span id="sb-rate">—</span>
+            </div>
+            <div class="price-row">
+              <span>Duration</span>
+              <span id="sb-duration">—</span>
+            </div>
+            <div class="price-row total">
+              <span>Total</span>
+              <span id="sb-total">—</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Info Card -->
+      <div class="info-card">
+        <div class="info-card-header">
+          <i class="fas fa-info-circle"></i> How It Works
+        </div>
+        <div class="info-card-body">
+          <ul class="info-list">
+            <li>
+              <i class="fas fa-edit"></i>
+              <span>Fill in the form and submit your booking request.</span>
+            </li>
+            <li>
+              <i class="fas fa-envelope-open-text"></i>
+              <span>We'll email you a confirmation within 24 hours.</span>
+            </li>
+            <li>
+              <i class="fas fa-truck"></i>
+              <span>Equipment is delivered to your venue before the event starts.</span>
+            </li>
+            <li>
+              <i class="fas fa-headset"></i>
+              <span>Our team provides full setup and on-site support.</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Contact Card -->
+      <div class="info-card">
+        <div class="info-card-header">
+          <i class="fas fa-headset"></i> Need Help?
+        </div>
+        <div class="info-card-body" style="display:flex;flex-direction:column;gap:10px;">
+          <a href="tel:+639123456789" class="btn btn-ghost btn-sm" style="justify-content:center;gap:8px;">
+            <i class="fas fa-phone"></i> Call Us
+          </a>
+          <a href="mailto:info@soundlight.ph" class="btn btn-outline btn-sm" style="justify-content:center;gap:8px;">
+            <i class="fas fa-envelope"></i> Email Us
+          </a>
+        </div>
+      </div>
+
+    </aside>
+  </div>
+</div>
+
+<script>
+(function () {
+  const eqSel = document.getElementById('equipment_id');
+  const startEl = document.getElementById('start_time');
+  const endEl = document.getElementById('end_time');
+  const dateEl = document.getElementById('event_date');
+  const priceEl = document.getElementById('estimatedPrice');
+  const sbRate = document.getElementById('sb-rate');
+  const sbDur = document.getElementById('sb-duration');
+  const sbTotal = document.getElementById('sb-total');
+  const availResult = document.getElementById('availabilityResult');
+
+  function fmt(n) {
+    return '₱' + parseFloat(n).toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+  }
+
+  function calcPrice() {
+    const opt = eqSel.options[eqSel.selectedIndex];
+    const rate = opt && opt.dataset.price ? parseFloat(opt.dataset.price) : null;
+    const s = startEl.value, e = endEl.value;
+    if (!rate || !s || !e) {
+      priceEl.textContent = '—';
+      sbRate.textContent = rate ? fmt(rate) + '/hr' : '—';
+      sbDur.textContent = '—';
+      sbTotal.textContent = '—';
+      return;
+    }
+    const [sh, sm] = s.split(':').map(Number);
+    const [eh, em] = e.split(':').map(Number);
+    const mins = (eh * 60 + em) - (sh * 60 + sm);
+    if (mins <= 0) {
+      priceEl.textContent = 'Invalid';
+      sbTotal.textContent = 'Invalid';
+      return;
+    }
+    const hrs = mins / 60;
+    const total = rate * hrs;
+    priceEl.textContent = fmt(total);
+    sbRate.textContent = fmt(rate) + '/hr';
+    sbDur.textContent = hrs % 1 === 0 ? hrs + 'h' : hrs.toFixed(1) + 'h';
+    sbTotal.textContent = fmt(total);
+  }
+
+  [eqSel, startEl, endEl].forEach(el => el && el.addEventListener('change', calcPrice));
+  calcPrice();
+
+  // Minimal date protection
+  if (dateEl) {
+    const today = new Date().toISOString().split('T')[0];
+    dateEl.min = today;
+  }
+})();
+</script>
+
+{% endblock %}

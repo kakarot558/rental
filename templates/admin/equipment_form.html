@@ -1,0 +1,70 @@
+{% extends 'admin/base.html' %}
+{% block title %}{{ action }} Equipment{% endblock %}
+{% block page_title %}{{ action }} Equipment{% endblock %}
+{% block page_subtitle %}{{ 'Create a new equipment listing' if action=='Add' else 'Update equipment details' }}{% endblock %}
+
+{% block content %}
+<div class="form-card" style="max-width:700px;">
+  <form method="POST" enctype="multipart/form-data">
+    <div class="form-grid">
+
+      <div class="form-group form-grid-2 {{ 'has-error' if errors.get('name') }}">
+        <label>Equipment Name *</label>
+        <input type="text" name="name" value="{{ eq.name if eq else '' }}" placeholder="e.g. Premium Sound System Pro" required>
+        {% if errors.get('name') %}<span class="form-error">{{ errors.name }}</span>{% endif %}
+      </div>
+
+      <div class="form-group {{ 'has-error' if errors.get('category') }}">
+        <label>Category *</label>
+        <select name="category" required>
+          <option value="">Select Category</option>
+          <option value="sound" {{ 'selected' if eq and eq.category=='sound' }}>🎵 Sound System</option>
+          <option value="light" {{ 'selected' if eq and eq.category=='light' }}>💡 Lighting System</option>
+          <option value="videoke" {{ 'selected' if eq and eq.category=='videoke' }}>🎤 Videoke System</option>
+        </select>
+        {% if errors.get('category') %}<span class="form-error">{{ errors.category }}</span>{% endif %}
+      </div>
+
+      <div class="form-group {{ 'has-error' if errors.get('price') }}">
+        <label>Price Per Hour (₱) *</label>
+        <input type="number" name="price_per_hour" step="0.01" min="0"
+          value="{{ eq.price_per_hour if eq else '' }}" placeholder="1500.00" required>
+        {% if errors.get('price') %}<span class="form-error">{{ errors.price }}</span>{% endif %}
+      </div>
+
+      <div class="form-group">
+        <label>Status</label>
+        <select name="status">
+          <option value="available" {{ 'selected' if not eq or eq.status=='available' }}>✅ Available</option>
+          <option value="unavailable" {{ 'selected' if eq and eq.status=='unavailable' }}>❌ Unavailable</option>
+        </select>
+      </div>
+
+      <div class="form-group" style="grid-column:1/-1;">
+        <label>Description</label>
+        <textarea name="description" placeholder="Describe this equipment, its features, capacity, etc.">{{ eq.description if eq else '' }}</textarea>
+      </div>
+
+      <div class="form-group" style="grid-column:1/-1;">
+        <label>Equipment Image</label>
+        <input type="file" id="imageInput" name="image" accept="image/*">
+        {% if eq and eq.image_path and eq.image_path != 'default.jpg' %}
+        <img src="{{ url_for('static', filename='images/equipment/' + eq.image_path) }}"
+          id="imagePreview" style="margin-top:0.75rem;max-height:160px;border-radius:var(--radius);border:1px solid var(--border);">
+        {% else %}
+        <img id="imagePreview" style="display:none;margin-top:0.75rem;max-height:160px;border-radius:var(--radius);">
+        {% endif %}
+      </div>
+
+      <div style="grid-column:1/-1;display:flex;gap:1rem;margin-top:0.5rem;">
+        <a href="{{ url_for('admin_equipment') }}" class="btn btn-outline" style="flex:1;justify-content:center;">
+          <i class="fas fa-arrow-left"></i> Cancel
+        </a>
+        <button type="submit" class="btn btn-primary" style="flex:2;justify-content:center;">
+          <i class="fas fa-save"></i> {{ action }} Equipment
+        </button>
+      </div>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,178 @@
+{% extends 'admin/base.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block page_subtitle %}Welcome back! Here's what's happening today.{% endblock %}
+
+{% block content %}
+<!-- Stats -->
+<div class="stats-grid">
+  <div class="stat-card primary">
+    <span class="stat-icon">📋</span>
+    <span class="stat-value" data-target="{{ stats.total }}">{{ stats.total }}</span>
+    <span class="stat-label">Total Bookings</span>
+  </div>
+  <div class="stat-card warning">
+    <span class="stat-icon">⏳</span>
+    <span class="stat-value" data-target="{{ stats.pending }}">{{ stats.pending }}</span>
+    <span class="stat-label">Pending</span>
+  </div>
+  <div class="stat-card success">
+    <span class="stat-icon">✅</span>
+    <span class="stat-value" data-target="{{ stats.approved }}">{{ stats.approved }}</span>
+    <span class="stat-label">Approved</span>
+  </div>
+  <div class="stat-card info">
+    <span class="stat-icon">🏁</span>
+    <span class="stat-value" data-target="{{ stats.completed }}">{{ stats.completed }}</span>
+    <span class="stat-label">Completed</span>
+  </div>
+  <div class="stat-card gold">
+    <span class="stat-icon">💰</span>
+    <span class="stat-value" style="font-size:1.4rem;">{{ stats.revenue | currency }}</span>
+    <span class="stat-label">Total Revenue</span>
+  </div>
+  <div class="stat-card" style="border-color:rgba(74,222,128,0.2);">
+    <span class="stat-icon">🏦</span>
+    <span class="stat-value" style="font-size:1.4rem;color:#4ade80;">{{ stats.collected | currency }}</span>
+    <span class="stat-label">Collected</span>
+  </div>
+  <div class="stat-card warning">
+    <span class="stat-icon">⏳</span>
+    <span class="stat-value">{{ stats.pending_payments }}</span>
+    <span class="stat-label">Payments to Verify</span>
+  </div>
+</div>
+
+{% if stats.pending_payments > 0 %}
+<div style="background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.2);border-radius:14px;padding:14px 20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+  <div style="display:flex;align-items:center;gap:10px;">
+    <span style="font-size:1.3rem;">⚠️</span>
+    <div>
+      <div style="font-weight:700;color:#fbbf24;font-size:0.92rem;">{{ stats.pending_payments }} payment{{ 's' if stats.pending_payments != 1 }} awaiting verification</div>
+      <div style="font-size:0.75rem;color:#78748f;">Review and verify customer GCash/Maya submissions</div>
+    </div>
+  </div>
+  <a href="{{ url_for('admin_payments', status='pending') }}" class="btn btn-primary btn-sm">
+    <i class="fas fa-wallet"></i> Verify Now
+  </a>
+</div>
+{% endif %}
+
+<!-- Recent Bookings -->
+<div class="table-card">
+  <div class="table-card-header">
+    <h3><i class="fas fa-list" style="color:var(--primary);margin-right:0.5rem;"></i> Recent Bookings</h3>
+    <a href="{{ url_for('admin_bookings') }}" class="btn btn-outline btn-sm">View All</a>
+  </div>
+  <div class="table-wrap">
+    {% if recent %}
+    <table>
+      <thead>
+        <tr>
+          <th>Reference</th>
+          <th>Customer</th>
+          <th>Equipment</th>
+          <th>Date</th>
+          <th>Total</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for b in recent %}
+        <tr>
+          <td><code style="color:var(--primary);font-size:0.8rem;">{{ b.booking_reference }}</code></td>
+          <td>
+            <div style="font-weight:600;">{{ b.customer_name }}</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);">{{ b.email }}</div>
+          </td>
+          <td>{{ b.eq_name }}</td>
+          <td>{{ b.event_date | dateformat }}<br><small style="color:var(--text-muted);">{{ b.start_time | timeformat }} – {{ b.end_time | timeformat }}</small></td>
+          <td style="color:var(--gold);font-weight:700;">{{ b.total_price | currency }}</td>
+          <td><span class="badge badge-{{ b.status }}">{{ b.status }}</span></td>
+          <td>
+            <div class="action-group">
+              {% if b.status == 'pending' %}
+              <form method="POST" action="{{ url_for('booking_action', bid=b.id) }}" style="display:inline;">
+                <input type="hidden" name="action" value="approve">
+                <button type="submit" class="btn btn-success btn-sm" title="Approve">✓</button>
+              </form>
+              <form method="POST" action="{{ url_for('booking_action', bid=b.id) }}" style="display:inline;">
+                <input type="hidden" name="action" value="reject">
+                <button type="submit" class="btn btn-danger btn-sm" title="Reject">✗</button>
+              </form>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state"><span class="empty-icon">📭</span><h3>No bookings yet</h3></div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Monthly Chart -->
+{% if monthly %}
+<div class="table-card">
+  <div class="table-card-header">
+    <h3><i class="fas fa-chart-bar" style="color:var(--primary);margin-right:0.5rem;"></i> Monthly Revenue (This Year)</h3>
+  </div>
+  <div style="padding:1.5rem;">
+    <canvas id="revenueChart" height="80"></canvas>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+const monthly = {{ monthly | tojson }};
+if (monthly && monthly.length > 0) {
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const labels = monthly.map(m => months[parseInt(m.month) - 1]);
+  const revenues = monthly.map(m => m.rev);
+  const counts = monthly.map(m => m.cnt);
+  new Chart(document.getElementById('revenueChart'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Revenue (₱)',
+          data: revenues,
+          backgroundColor: 'rgba(108,99,255,0.6)',
+          borderColor: '#6c63ff',
+          borderWidth: 2,
+          borderRadius: 8,
+          yAxisID: 'y'
+        },
+        {
+          label: 'Bookings',
+          data: counts,
+          type: 'line',
+          borderColor: '#ff6584',
+          backgroundColor: 'rgba(255,101,132,0.1)',
+          borderWidth: 2,
+          pointBackgroundColor: '#ff6584',
+          tension: 0.4,
+          yAxisID: 'y1'
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { labels: { color: '#e8e8f0' } } },
+      scales: {
+        x: { ticks: { color: '#8888aa' }, grid: { color: '#2d2d4e' } },
+        y: { ticks: { color: '#8888aa', callback: v => '₱' + v.toLocaleString() }, grid: { color: '#2d2d4e' }, position: 'left' },
+        y1: { ticks: { color: '#8888aa' }, grid: { drawOnChartArea: false }, position: 'right' }
+      }
+    }
+  });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,497 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}Booking Detail{% endblock %}
+{% block breadcrumb %} / <a href="{{ url_for('admin_bookings') }}">Bookings</a> / {{ booking.booking_reference }}{% endblock %}
+{% block content %}
+
+<style>
+/* ── Booking Detail Enhancements ── */
+
+/* Reference header banner */
+.booking-ref-banner {
+  background: linear-gradient(135deg, rgba(201,150,58,.07), rgba(201,150,58,.02));
+  border: 1px solid rgba(201,150,58,.18);
+  border-radius: 16px;
+  padding: 20px 26px;
+  margin-bottom: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+.booking-ref-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.booking-ref-icon {
+  width: 46px;
+  height: 46px;
+  background: rgba(201,150,58,.12);
+  border: 1px solid rgba(201,150,58,.25);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gold);
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+.booking-ref-label {
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--txm);
+  margin-bottom: 4px;
+}
+.booking-ref-code {
+  font-family: 'Courier New', monospace;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #f4f0e4;
+  letter-spacing: .04em;
+}
+.booking-ref-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Status Timeline */
+.status-timeline {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-bottom: 22px;
+  background: #0d0d1b;
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 14px;
+  padding: 18px 24px;
+  overflow-x: auto;
+}
+.tl-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 80px;
+  position: relative;
+}
+.tl-step::after {
+  content: '';
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  right: -50%;
+  height: 2px;
+  background: rgba(255,255,255,.07);
+  z-index: 0;
+}
+.tl-step:last-child::after { display: none; }
+.tl-dot {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,.12);
+  background: #131325;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .82rem;
+  color: #38354a;
+  position: relative;
+  z-index: 1;
+  transition: all .25s ease;
+}
+.tl-label {
+  font-size: .65rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: #38354a;
+  white-space: nowrap;
+}
+
+/* Active/done states */
+.tl-step.done .tl-dot {
+  background: rgba(34,197,94,.12);
+  border-color: rgba(34,197,94,.35);
+  color: #4ade80;
+}
+.tl-step.done .tl-label { color: #78748f; }
+.tl-step.done::after { background: rgba(34,197,94,.2); }
+
+.tl-step.active .tl-dot {
+  background: rgba(201,150,58,.15);
+  border-color: rgba(201,150,58,.5);
+  color: var(--gold-l);
+  box-shadow: 0 0 12px rgba(201,150,58,.25);
+}
+.tl-step.active .tl-label { color: var(--gold); }
+
+.tl-step.rejected .tl-dot {
+  background: rgba(239,68,68,.12);
+  border-color: rgba(239,68,68,.35);
+  color: #f87171;
+}
+.tl-step.rejected .tl-label { color: #f87171; }
+
+/* ── Detail Layout ── */
+.detail-layout {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 20px;
+  align-items: start;
+}
+.detail-main { display: flex; flex-direction: column; gap: 16px; }
+.detail-sidebar { display: flex; flex-direction: column; gap: 14px; }
+
+/* Card base */
+.card {
+  background: #0d0d1b;
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 18px;
+  overflow: hidden;
+}
+.card-header {
+  padding: 16px 22px;
+  border-bottom: 1px solid rgba(255,255,255,.07);
+  background: rgba(201,150,58,.02);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.card-header h3 {
+  font-family: 'Sora', sans-serif;
+  font-size: .9rem;
+  font-weight: 700;
+  color: #f4f0e4;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0;
+}
+.card-header h3 i { color: #c9963a; }
+.card-body { padding: 22px; }
+
+/* Detail grid inside card */
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 4px;
+}
+.detail-group {
+  background: rgba(255,255,255,.02);
+  border: 1px solid rgba(255,255,255,.05);
+  border-radius: 14px;
+  padding: 18px 20px;
+}
+.detail-group h4 {
+  font-size: .65rem;
+  font-weight: 700;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: #c9963a;
+  margin: 0 0 14px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255,255,255,.04);
+  font-size: .83rem;
+}
+.detail-row:last-child { border: none; }
+.detail-row span:first-child { color: #78748f; min-width: 88px; flex-shrink: 0; font-size: .78rem; }
+.detail-row span:last-child { color: #ede9de; font-weight: 500; text-align: right; max-width: 55%; word-break: break-word; }
+
+/* Price highlight row */
+.detail-row.price-highlight span:last-child {
+  font-family: 'Sora', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #e8ba5a;
+}
+
+/* Notes box */
+.notes-text {
+  background: rgba(255,255,255,.025);
+  border: 1px solid rgba(255,255,255,.07);
+  border-left: 3px solid rgba(201,150,58,.4);
+  border-radius: 10px;
+  padding: 14px 16px;
+  font-size: .84rem;
+  color: #78748f;
+  line-height: 1.7;
+  margin-top: 2px;
+  font-style: italic;
+}
+
+/* Submitted at row */
+.detail-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0 0;
+  font-size: .75rem;
+  color: #38354a;
+  border-top: 1px dashed rgba(255,255,255,.04);
+  margin-top: 10px;
+}
+
+/* ── Action Sidebar ── */
+.action-sidebar-card {
+  background: #0d0d1b;
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 18px;
+  overflow: hidden;
+}
+.action-sidebar-header {
+  padding: 14px 20px;
+  border-bottom: 1px solid rgba(255,255,255,.07);
+  background: rgba(201,150,58,.02);
+}
+.action-sidebar-header h3 {
+  font-family: 'Sora', sans-serif;
+  font-size: .85rem;
+  font-weight: 700;
+  color: #f4f0e4;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0;
+}
+.action-sidebar-header h3 i { color: #c9963a; }
+.action-sidebar-body {
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.action-sidebar-body .btn { width: 100%; justify-content: center; font-size: .84rem; }
+.action-divider {
+  height: 1px;
+  background: rgba(255,255,255,.05);
+  margin: 2px 0;
+}
+
+/* Meta info card in sidebar */
+.meta-card {
+  background: #0d0d1b;
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 18px;
+  overflow: hidden;
+}
+.meta-card-body {
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255,255,255,.04);
+  font-size: .8rem;
+}
+.meta-row:last-child { border: none; }
+.meta-row span:first-child { color: #78748f; }
+.meta-row span:last-child { color: #ede9de; font-weight: 600; text-align: right; }
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .detail-layout { grid-template-columns: 1fr; }
+  .detail-grid { grid-template-columns: 1fr; }
+}
+</style>
+
+<!-- Page Title -->
+<div class="page-title">
+  <h1><i class="fas fa-file-invoice"></i> Booking Detail</h1>
+  <a href="{{ url_for('admin_bookings') }}" class="btn btn-outline btn-sm">
+    <i class="fas fa-arrow-left"></i> Back to Bookings
+  </a>
+</div>
+
+<!-- Reference Banner -->
+<div class="booking-ref-banner">
+  <div class="booking-ref-left">
+    <div class="booking-ref-icon"><i class="fas fa-hashtag"></i></div>
+    <div>
+      <div class="booking-ref-label">Booking Reference</div>
+      <div class="booking-ref-code">{{ booking.booking_reference }}</div>
+    </div>
+  </div>
+  <div class="booking-ref-right">
+    <span class="badge badge-{{ booking.status }} badge-lg">
+      {% if booking.status == 'pending' %}<i class="fas fa-clock" style="margin-right:5px;font-size:.72rem;"></i>
+      {% elif booking.status == 'approved' %}<i class="fas fa-check-circle" style="margin-right:5px;font-size:.72rem;"></i>
+      {% elif booking.status == 'completed' %}<i class="fas fa-flag-checkered" style="margin-right:5px;font-size:.72rem;"></i>
+      {% elif booking.status == 'rejected' %}<i class="fas fa-times-circle" style="margin-right:5px;font-size:.72rem;"></i>
+      {% endif %}
+      {{ booking.status|capitalize }}
+    </span>
+  </div>
+</div>
+
+<!-- Status Timeline -->
+{% if booking.status != 'rejected' %}
+<div class="status-timeline">
+  <div class="tl-step done">
+    <div class="tl-dot"><i class="fas fa-paper-plane"></i></div>
+    <span class="tl-label">Submitted</span>
+  </div>
+  <div class="tl-step {{ 'active' if booking.status == 'pending' else 'done' if booking.status in ['approved','completed'] else '' }}">
+    <div class="tl-dot"><i class="fas fa-hourglass-half"></i></div>
+    <span class="tl-label">Pending</span>
+  </div>
+  <div class="tl-step {{ 'active' if booking.status == 'approved' else 'done' if booking.status == 'completed' else '' }}">
+    <div class="tl-dot"><i class="fas fa-check-circle"></i></div>
+    <span class="tl-label">Approved</span>
+  </div>
+  <div class="tl-step {{ 'active' if booking.status == 'completed' else '' }}">
+    <div class="tl-dot"><i class="fas fa-flag-checkered"></i></div>
+    <span class="tl-label">Completed</span>
+  </div>
+</div>
+{% else %}
+<div class="status-timeline">
+  <div class="tl-step done">
+    <div class="tl-dot"><i class="fas fa-paper-plane"></i></div>
+    <span class="tl-label">Submitted</span>
+  </div>
+  <div class="tl-step rejected">
+    <div class="tl-dot"><i class="fas fa-times-circle"></i></div>
+    <span class="tl-label">Rejected</span>
+  </div>
+</div>
+{% endif %}
+
+<!-- Detail Layout -->
+<div class="detail-layout">
+
+  <!-- Main Content -->
+  <div class="detail-main">
+    <div class="card">
+      <div class="card-header">
+        <h3><i class="fas fa-info-circle"></i> Booking Information</h3>
+      </div>
+      <div class="card-body">
+
+        <div class="detail-grid">
+          <!-- Customer Info -->
+          <div class="detail-group">
+            <h4><i class="fas fa-user"></i> Customer</h4>
+            <div class="detail-row"><span>Name</span><span>{{ booking.customer_name }}</span></div>
+            <div class="detail-row"><span>Email</span><span>{{ booking.email }}</span></div>
+            <div class="detail-row"><span>Contact</span><span>{{ booking.contact_number }}</span></div>
+            <div class="detail-row"><span>Address</span><span>{{ booking.address }}</span></div>
+          </div>
+
+          <!-- Event Details -->
+          <div class="detail-group">
+            <h4><i class="fas fa-calendar"></i> Event</h4>
+            <div class="detail-row"><span>Date</span><span>{{ booking.event_date | dateformat }}</span></div>
+            <div class="detail-row"><span>Start</span><span>{{ booking.start_time | timeformat }}</span></div>
+            <div class="detail-row"><span>End</span><span>{{ booking.end_time | timeformat }}</span></div>
+            <div class="detail-row"><span>Equipment</span><span>{{ booking.eq_name }}</span></div>
+            <div class="detail-row price-highlight"><span>Total</span><span>₱{{ "%.2f"|format(booking.total_price) }}</span></div>
+          </div>
+        </div>
+
+        {% if booking.special_instructions %}
+        <div class="detail-group" style="margin-top:14px;">
+          <h4><i class="fas fa-comment-alt"></i> Special Instructions</h4>
+          <p class="notes-text">{{ booking.special_instructions }}</p>
+        </div>
+        {% endif %}
+
+        <div class="detail-meta-row">
+          <span><i class="fas fa-clock" style="margin-right:5px;"></i> Submitted {{ booking.created_at }}</span>
+          <span>ID #{{ booking.id }}</span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Sidebar -->
+  <div class="detail-sidebar">
+
+    <!-- Quick Stats -->
+    <div class="meta-card">
+      <div class="meta-card-body">
+        <div class="meta-row">
+          <span><i class="fas fa-tag" style="margin-right:6px;color:#c9963a;"></i> Status</span>
+          <span><span class="badge badge-{{ booking.status }}">{{ booking.status|capitalize }}</span></span>
+        </div>
+        <div class="meta-row">
+          <span><i class="fas fa-peso-sign" style="margin-right:6px;color:#c9963a;"></i> Total</span>
+          <span style="color:#e8ba5a;font-family:'Sora',sans-serif;">₱{{ "%.2f"|format(booking.total_price) }}</span>
+        </div>
+        <div class="meta-row">
+          <span><i class="fas fa-calendar" style="margin-right:6px;color:#c9963a;"></i> Event</span>
+          <span>{{ booking.event_date | dateformat }}</span>
+        </div>
+        <div class="meta-row">
+          <span><i class="fas fa-music" style="margin-right:6px;color:#c9963a;"></i> Equipment</span>
+          <span>{{ booking.eq_name }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="action-sidebar-card">
+      <div class="action-sidebar-header">
+        <h3><i class="fas fa-cogs"></i> Actions</h3>
+      </div>
+      <div class="action-sidebar-body">
+
+        {% if booking.status == 'pending' %}
+        <form method="POST" action="{{ url_for('admin_booking_status', booking_id=booking.id) }}">
+          <input type="hidden" name="status" value="approved">
+          <button type="submit" class="btn btn-success">
+            <i class="fas fa-check-circle"></i> Approve Booking
+          </button>
+        </form>
+        <form method="POST" action="{{ url_for('admin_booking_status', booking_id=booking.id) }}">
+          <input type="hidden" name="status" value="rejected">
+          <button type="submit" class="btn btn-danger">
+            <i class="fas fa-times-circle"></i> Reject Booking
+          </button>
+        </form>
+
+        {% elif booking.status == 'approved' %}
+        <form method="POST" action="{{ url_for('admin_booking_status', booking_id=booking.id) }}">
+          <input type="hidden" name="status" value="completed">
+          <button type="submit" class="btn btn-info">
+            <i class="fas fa-flag-checkered"></i> Mark as Completed
+          </button>
+        </form>
+        {% endif %}
+
+        <div class="action-divider"></div>
+
+        <form method="POST" action="{{ url_for('admin_booking_delete', booking_id=booking.id) }}"
+          onsubmit="return confirm('Permanently delete this booking? This action cannot be undone.')">
+          <button type="submit" class="btn btn-danger btn-outline" style="border-style:dashed;background:transparent;">
+            <i class="fas fa-trash-alt"></i> Delete Booking
+          </button>
+        </form>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block title %}Equipment{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-label">Catalog</span>
+      <h2>Available Equipment</h2>
+      <p>Choose from our professional-grade rental inventory</p>
+    </div>
+
+    <!-- Category Filters -->
+    <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;margin-bottom:2.5rem;">
+      <a href="{{ url_for('equipment_list') }}" class="btn {{ 'btn-primary' if not active_cat else 'btn-outline' }} cat-filter {{ 'active' if not active_cat }}">
+        <i class="fas fa-th"></i> All
+      </a>
+      <a href="{{ url_for('equipment_list', category='sound') }}" class="btn {{ 'btn-primary' if active_cat=='sound' else 'btn-outline' }} cat-filter">
+        <i class="fas fa-volume-up"></i> Sound Systems
+      </a>
+      <a href="{{ url_for('equipment_list', category='light') }}" class="btn {{ 'btn-primary' if active_cat=='light' else 'btn-outline' }} cat-filter">
+        <i class="fas fa-lightbulb"></i> Lighting Systems
+      </a>
+      <a href="{{ url_for('equipment_list', category='videoke') }}" class="btn {{ 'btn-primary' if active_cat=='videoke' else 'btn-outline' }} cat-filter">
+        <i class="fas fa-microphone"></i> Videoke Systems
+      </a>
+    </div>
+
+    {% if equipment %}
+    <div class="grid grid-3">
+      {% for eq in equipment %}
+      <div class="eq-card">
+        <div class="eq-card-img">
+          <span class="eq-category-tag cat-{{ eq.category }}">{{ eq.category }}</span>
+          {% if eq.image_path and eq.image_path != 'default.jpg' %}
+            <img src="{{ url_for('static', filename='images/equipment/' + eq.image_path) }}" alt="{{ eq.name }}" loading="lazy">
+          {% else %}
+            <span class="eq-card-img-placeholder">
+              {{ '🎵' if eq.category == 'sound' else '💡' if eq.category == 'light' else '🎤' }}
+            </span>
+          {% endif %}
+          <span class="eq-badge">Available</span>
+        </div>
+        <div class="eq-card-body">
+          <h3>{{ eq.name }}</h3>
+          <p>{{ eq.description }}</p>
+          <div class="eq-price">₱{{ "%.2f"|format(eq.price_per_hour) }} <span>/ hour</span></div>
+          <a href="{{ url_for('book', eq=eq.id) }}" class="btn btn-primary" style="width:100%;justify-content:center;">
+            <i class="fas fa-calendar-plus"></i> Book This Equipment
+          </a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <span class="empty-icon">📦</span>
+      <h3>No equipment in this category</h3>
+      <p>Try a different category or check back soon.</p>
+      <a href="{{ url_for('equipment_list') }}" class="btn btn-outline" style="margin-top:1rem;">View All</a>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

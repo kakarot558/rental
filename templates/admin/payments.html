@@ -1,0 +1,256 @@
+{% extends 'admin/base.html' %}
+{% block title %}Payments{% endblock %}
+{% block page_title %}Payments{% endblock %}
+{% block page_subtitle %}Verify GCash, Maya and cash payments{% endblock %}
+
+{% block content %}
+
+<!-- Stat Cards -->
+<div class="stats-grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));margin-bottom:24px;">
+  <div class="stat-card warning">
+    <span class="stat-icon">⏳</span>
+    <span class="stat-value">{{ totals.count_pending }}</span>
+    <span class="stat-label">Pending Verification</span>
+  </div>
+  <div class="stat-card gold">
+    <span class="stat-icon">💰</span>
+    <span class="stat-value" style="font-size:1.35rem;">{{ totals.verified | currency }}</span>
+    <span class="stat-label">Total Verified</span>
+  </div>
+  <div class="stat-card primary">
+    <span class="stat-icon">⌛</span>
+    <span class="stat-value" style="font-size:1.35rem;">{{ totals.pending | currency }}</span>
+    <span class="stat-label">Awaiting Verification</span>
+  </div>
+  <div class="stat-card" style="border-color:rgba(239,68,68,0.2);">
+    <span class="stat-icon">❌</span>
+    <span class="stat-value" style="font-size:1.35rem;color:#f87171;">{{ totals.rejected | currency }}</span>
+    <span class="stat-label">Rejected</span>
+  </div>
+</div>
+
+<!-- Filters -->
+<div class="filter-bar" style="margin-bottom:20px;">
+  <form method="GET" style="display:flex;gap:14px;flex-wrap:wrap;width:100%;align-items:flex-end;">
+    <div class="form-group" style="flex:1;min-width:140px;">
+      <label>Status</label>
+      <select name="status">
+        <option value="">All Status</option>
+        <option value="pending"  {{ 'selected' if status_filter=='pending' }}>⏳ Pending</option>
+        <option value="verified" {{ 'selected' if status_filter=='verified' }}>✅ Verified</option>
+        <option value="rejected" {{ 'selected' if status_filter=='rejected' }}>❌ Rejected</option>
+      </select>
+    </div>
+    <div class="form-group" style="flex:1;min-width:140px;">
+      <label>Method</label>
+      <select name="method">
+        <option value="">All Methods</option>
+        <option value="gcash" {{ 'selected' if method_filter=='gcash' }}>💚 GCash</option>
+        <option value="maya"  {{ 'selected' if method_filter=='maya' }}>🔵 Maya</option>
+        <option value="cash"  {{ 'selected' if method_filter=='cash' }}>💵 Cash</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:8px;align-items:flex-end;">
+      <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-filter"></i> Filter</button>
+      <a href="{{ url_for('admin_payments') }}" class="btn btn-outline btn-sm">Clear</a>
+    </div>
+  </form>
+</div>
+
+<!-- Record Manual Payment -->
+<div class="table-card" style="margin-bottom:20px;">
+  <div class="table-card-header">
+    <h3><i class="fas fa-plus-circle"></i> Record Cash / Manual Payment</h3>
+    <button class="btn btn-outline btn-sm" onclick="document.getElementById('recordForm').classList.toggle('hidden-form')">
+      <i class="fas fa-chevron-down"></i> Toggle
+    </button>
+  </div>
+  <div id="recordForm" class="hidden-form">
+    <form method="POST" action="{{ url_for('record_payment') }}" style="padding:20px 24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;align-items:end;">
+      <div class="form-group">
+        <label>Booking ID</label>
+        <input type="number" name="booking_id" placeholder="e.g. 3" required>
+      </div>
+      <div class="form-group">
+        <label>Amount (₱)</label>
+        <input type="number" name="amount" step="0.01" min="1" placeholder="0.00" required>
+      </div>
+      <div class="form-group">
+        <label>Method</label>
+        <select name="method">
+          <option value="cash">💵 Cash</option>
+          <option value="gcash">💚 GCash</option>
+          <option value="maya">🔵 Maya</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Payment Type</label>
+        <select name="payment_type">
+          <option value="full">Full Payment</option>
+          <option value="half">50% Down</option>
+          <option value="partial">Partial</option>
+        </select>
+      </div>
+      <div class="form-group" style="grid-column:span 2;">
+        <label>Notes</label>
+        <input type="text" name="notes" placeholder="e.g. Cash received in person">
+      </div>
+      <div>
+        <button type="submit" class="btn btn-success btn-sm" style="width:100%;justify-content:center;">
+          <i class="fas fa-check"></i> Record & Verify
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Payments Table -->
+<div class="table-card">
+  <div class="table-card-header">
+    <h3><i class="fas fa-list"></i> Payment Submissions ({{ payments|length }})</h3>
+  </div>
+  <div class="table-wrap">
+    {% if payments %}
+    <table>
+      <thead>
+        <tr>
+          <th>Payment Ref</th>
+          <th>Booking</th>
+          <th>Customer</th>
+          <th>Method</th>
+          <th>Type</th>
+          <th>Amount</th>
+          <th>E-Wallet Ref</th>
+          <th>Status</th>
+          <th>Date</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in payments %}
+        <tr>
+          <td><code>{{ p.payment_reference }}</code></td>
+          <td>
+            <code style="font-size:0.72rem;">{{ p.booking_reference }}</code>
+            <div style="font-size:0.7rem;color:#78748f;">#{{ p.booking_id }}</div>
+          </td>
+          <td>
+            <div style="font-weight:600;font-size:0.85rem;">{{ p.customer_name }}</div>
+            <div style="font-size:0.72rem;color:#78748f;">Total: {{ p.total_price | currency }}</div>
+          </td>
+          <td>
+            <span class="badge badge-method-{{ p.method }}">
+              {{ '💚' if p.method=='gcash' else '🔵' if p.method=='maya' else '💵' }}
+              {{ p.method | upper }}
+            </span>
+          </td>
+          <td>
+            <span class="badge badge-paytype-{{ p.payment_type }}">
+              {{ {'full':'Full','half':'50%','partial':'Partial','custom':'Custom'}.get(p.payment_type, p.payment_type) }}
+            </span>
+          </td>
+          <td style="color:#e8ba5a;font-weight:800;font-size:0.95rem;">{{ p.amount | currency }}</td>
+          <td>
+            {% if p.e_ref_number and p.e_ref_number != 'CASH' %}
+            <code style="font-size:0.75rem;color:#93c5fd;">{{ p.e_ref_number }}</code>
+            {% if p.sender_name %}
+            <div style="font-size:0.7rem;color:#78748f;">{{ p.sender_name }}</div>
+            <div style="font-size:0.7rem;color:#78748f;">{{ p.sender_number }}</div>
+            {% endif %}
+            {% else %}
+            <span style="color:#78748f;font-size:0.8rem;">—</span>
+            {% endif %}
+          </td>
+          <td>
+            <span class="badge badge-pay-{{ p.status }}">
+              {{ {'pending':'⏳ Pending','verified':'✅ Verified','rejected':'❌ Rejected'}.get(p.status, p.status) }}
+            </span>
+            {% if p.verified_by %}
+            <div style="font-size:0.68rem;color:#78748f;margin-top:3px;">by {{ p.verified_by }}</div>
+            {% endif %}
+          </td>
+          <td style="font-size:0.75rem;color:#78748f;white-space:nowrap;">
+            {{ p.created_at[:16] if p.created_at else '—' }}
+          </td>
+          <td>
+            {% if p.status == 'pending' %}
+            <div class="action-group">
+              <button class="btn btn-success btn-sm"
+                onclick="openVerifyModal({{ p.id }}, 'verify', '{{ p.payment_reference }}', {{ p.amount }})"
+                title="Verify">
+                <i class="fas fa-check"></i>
+              </button>
+              <button class="btn btn-danger btn-sm"
+                onclick="openVerifyModal({{ p.id }}, 'reject', '{{ p.payment_reference }}', {{ p.amount }})"
+                title="Reject">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+            {% else %}
+            <span style="font-size:0.75rem;color:#78748f;">{{ p.status }}</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+      <span class="empty-icon">💳</span>
+      <h3>No payments found</h3>
+      <p>Payment submissions from customers will appear here.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Verify / Reject Modal -->
+<div class="modal-overlay" id="verifyModal">
+  <div class="modal" style="max-width:420px;">
+    <h3 id="modalTitle">Verify Payment</h3>
+    <p id="modalDesc" style="color:#78748f;font-size:0.88rem;margin-bottom:16px;"></p>
+    <form method="POST" id="verifyForm">
+      <div class="form-group" style="margin-bottom:14px;">
+        <label>Notes / Reason (optional)</label>
+        <textarea name="notes" id="modalNotes" rows="2"
+          placeholder="e.g. Verified via GCash statement..."></textarea>
+      </div>
+      <input type="hidden" name="action" id="modalAction">
+      <div style="display:flex;gap:10px;">
+        <button type="button" class="btn btn-outline" onclick="closeVerifyModal()" style="flex:1;justify-content:center;">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="modalSubmitBtn" style="flex:2;justify-content:center;">Confirm</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function openVerifyModal(pid, action, ref, amount) {
+  const modal = document.getElementById('verifyModal');
+  const form  = document.getElementById('verifyForm');
+  const isVerify = action === 'verify';
+  document.getElementById('modalTitle').textContent = isVerify ? '✅ Verify Payment' : '❌ Reject Payment';
+  document.getElementById('modalDesc').innerHTML =
+    `Payment <code>${ref}</code> — Amount: <strong>₱${parseFloat(amount).toLocaleString('en-PH',{minimumFractionDigits:2})}</strong>`;
+  document.getElementById('modalAction').value = action;
+  document.getElementById('modalNotes').placeholder = isVerify
+    ? 'e.g. Verified via GCash app statement'
+    : 'e.g. Reference number not found';
+  const btn = document.getElementById('modalSubmitBtn');
+  btn.className = isVerify ? 'btn btn-success' : 'btn btn-danger';
+  btn.textContent = isVerify ? '✅ Verify' : '❌ Reject';
+  btn.style.flex = '2'; btn.style.justifyContent = 'center';
+  form.action = `/admin/payments/${pid}/verify`;
+  modal.classList.add('active');
+}
+function closeVerifyModal() {
+  document.getElementById('verifyModal').classList.remove('active');
+}
+document.getElementById('verifyModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('verifyModal')) closeVerifyModal();
+});
+</script>
+{% endblock %}

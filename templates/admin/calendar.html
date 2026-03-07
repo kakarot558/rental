@@ -1,0 +1,71 @@
+{% extends 'admin/base.html' %}
+{% block title %}Calendar{% endblock %}
+{% block page_title %}Booking Calendar{% endblock %}
+{% block page_subtitle %}Monthly view of all scheduled events{% endblock %}
+
+{% block extra_head %}
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div style="display:flex;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap;align-items:center;">
+  <div style="display:flex;gap:1rem;flex-wrap:wrap;font-size:0.82rem;">
+    <span style="display:flex;align-items:center;gap:0.4rem;"><span style="width:12px;height:12px;background:#f59e0b;border-radius:3px;display:inline-block;"></span> Pending</span>
+    <span style="display:flex;align-items:center;gap:0.4rem;"><span style="width:12px;height:12px;background:#10b981;border-radius:3px;display:inline-block;"></span> Approved</span>
+  </div>
+</div>
+
+<div id="calendar"></div>
+
+<!-- Event Detail Modal -->
+<div class="modal-overlay" id="eventModal">
+  <div class="modal">
+    <h3 id="modalTitle">Booking Details</h3>
+    <div id="modalContent"></div>
+    <div class="modal-btns">
+      <button class="btn btn-outline" onclick="closeModal()">Close</button>
+      <a id="modalBookingsLink" href="{{ url_for('admin_bookings') }}" class="btn btn-primary">
+        <i class="fas fa-external-link-alt"></i> View Bookings
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+<script>
+const events = {{ events_json | safe }};
+
+document.addEventListener('DOMContentLoaded', () => {
+  const cal = new FullCalendar.Calendar(document.getElementById('calendar'), {
+    initialView: 'dayGridMonth',
+    events,
+    headerToolbar: { left:'prev,next today', center:'title', right:'dayGridMonth,listWeek' },
+    eventClick: function(info) {
+      const p = info.event.extendedProps;
+      document.getElementById('modalTitle').textContent = '📋 ' + p.customer;
+      document.getElementById('modalContent').innerHTML = `
+        <p><strong>Reference:</strong> <code style="color:var(--primary)">${p.ref}</code></p>
+        <p><strong>Customer:</strong> ${p.customer}</p>
+        <p><strong>Equipment:</strong> ${p.equipment}</p>
+        <p><strong>Date:</strong> ${info.event.startStr.split('T')[0]}</p>
+        <p><strong>Time:</strong> ${info.event.startStr.split('T')[1]?.substring(0,5)} — ${info.event.endStr?.split('T')[1]?.substring(0,5)}</p>
+        <p><strong>Status:</strong> <span class="badge badge-${p.status}">${p.status}</span></p>
+      `.replace(/<p>/g,'<p style="margin-bottom:0.5rem;font-size:0.9rem;">');
+      document.getElementById('eventModal').classList.add('active');
+    },
+    height: 'auto',
+    dayCellClassNames: 'fc-daygrid-day'
+  });
+  cal.render();
+});
+
+function closeModal() {
+  document.getElementById('eventModal').classList.remove('active');
+}
+document.getElementById('eventModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('eventModal')) closeModal();
+});
+</script>
+{% endblock %}

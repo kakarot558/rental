@@ -1,0 +1,59 @@
+{% extends 'admin/base.html' %}
+{% block title %}Equipment{% endblock %}
+{% block page_title %}Equipment{% endblock %}
+{% block page_subtitle %}Manage your rental inventory{% endblock %}
+
+{% block content %}
+<div style="display:flex;justify-content:flex-end;margin-bottom:1.5rem;">
+  <a href="{{ url_for('add_equipment') }}" class="btn btn-primary">
+    <i class="fas fa-plus"></i> Add Equipment
+  </a>
+</div>
+
+{% if equipment %}
+<div class="grid grid-3">
+  {% for eq in equipment %}
+  <div class="eq-admin-card">
+    <div class="eq-admin-img">
+      {% if eq.image_path and eq.image_path != 'default.jpg' %}
+        <img src="{{ url_for('static', filename='images/equipment/' + eq.image_path) }}" alt="{{ eq.name }}">
+      {% else %}
+        <span>{{ '🎵' if eq.category == 'sound' else '💡' if eq.category == 'light' else '🎤' }}</span>
+      {% endif %}
+    </div>
+    <div class="eq-admin-body">
+      <h3>{{ eq.name }}</h3>
+      <div class="eq-admin-meta">
+        <span class="badge badge-{{ eq.category }}">{{ eq.category }}</span>
+        <span class="badge badge-{{ eq.status }}">{{ eq.status }}</span>
+      </div>
+      <div class="eq-admin-price">₱{{ "%.2f"|format(eq.price_per_hour) }} / hr</div>
+      <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:1rem;">
+        {{ eq.description[:80] }}{% if eq.description|length > 80 %}...{% endif %}
+      </p>
+      <div class="action-group">
+        <a href="{{ url_for('edit_equipment', eid=eq.id) }}" class="btn btn-outline btn-sm" style="flex:1;justify-content:center;">
+          <i class="fas fa-edit"></i> Edit
+        </a>
+        <form method="POST" action="{{ url_for('delete_equipment', eid=eq.id) }}"
+          onsubmit="return confirm('Delete {{ eq.name }}? Existing bookings may be affected.')" style="flex:1;">
+          <button type="submit" class="btn btn-danger btn-sm" style="width:100%;justify-content:center;">
+            <i class="fas fa-trash"></i> Delete
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+  <span class="empty-icon">📦</span>
+  <h3>No equipment yet</h3>
+  <p>Add your first piece of rental equipment to get started.</p>
+  <a href="{{ url_for('add_equipment') }}" class="btn btn-primary" style="margin-top:1rem;">
+    <i class="fas fa-plus"></i> Add Equipment
+  </a>
+</div>
+{% endif %}
+{% endblock %}

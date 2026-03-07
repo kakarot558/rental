@@ -1,0 +1,587 @@
+{% extends 'base.html' %}
+{% block title %}Track My Booking{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ── Page ───────────────────────────────────────────────────────── */
+.track-page {
+  min-height: 100vh;
+  background: #07070f;
+  padding: 64px 20px 100px;
+  position: relative;
+  overflow: hidden;
+}
+.track-page::before {
+  content: '';
+  position: fixed; top: -25%; left: 50%;
+  transform: translateX(-50%);
+  width: 1000px; height: 600px;
+  background: radial-gradient(ellipse, rgba(99,102,241,0.06) 0%, transparent 65%);
+  pointer-events: none; z-index: 0;
+}
+.track-wrap { position: relative; z-index: 1; max-width: 680px; margin: 0 auto; }
+
+/* ── Hero ───────────────────────────────────────────────────────── */
+.track-hero { text-align: center; margin-bottom: 40px; animation: fadeUp 0.6s ease both; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(18px);} to{opacity:1;transform:translateY(0);} }
+.track-hero-icon {
+  width: 72px; height: 72px; border-radius: 22px;
+  background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(99,102,241,0.05));
+  border: 1px solid rgba(99,102,241,0.25);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.9rem; margin: 0 auto 20px;
+  box-shadow: 0 0 0 8px rgba(99,102,241,0.05), 0 16px 40px rgba(0,0,0,0.4);
+}
+.track-hero h1 {
+  font-family: 'Sora', sans-serif;
+  font-size: clamp(1.7rem, 4.5vw, 2.3rem);
+  font-weight: 800; color: #f4f0e4;
+  letter-spacing: -0.03em; line-height: 1.15;
+  margin: 0 0 12px;
+}
+.track-hero h1 span { color: #818cf8; }
+.track-hero p { font-size: 0.94rem; color: #78748f; margin: 0; line-height: 1.65; }
+
+/* ── Search Card ────────────────────────────────────────────────── */
+.track-search-card {
+  background: #0d0d1b;
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 24px; overflow: hidden;
+  margin-bottom: 20px;
+  animation: fadeUp 0.6s ease both 0.12s;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.4);
+}
+.track-search-hdr {
+  background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(99,102,241,0.02));
+  border-bottom: 1px solid rgba(99,102,241,0.1);
+  padding: 18px 26px; display: flex; align-items: center; gap: 12px;
+}
+.track-search-hdr-ico {
+  width: 34px; height: 34px;
+  background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.2);
+  border-radius: 9px; display: flex; align-items: center; justify-content: center;
+  font-size: 0.85rem; color: #818cf8; flex-shrink: 0;
+}
+.track-search-hdr h3 {
+  font-family: 'Sora', sans-serif; font-size: 0.72rem; font-weight: 700;
+  letter-spacing: 0.14em; text-transform: uppercase; color: #818cf8; margin: 0;
+}
+.track-search-body { padding: 28px 26px; }
+
+.track-field-group { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+@media(max-width:560px) { .track-field-group { grid-template-columns: 1fr; } }
+
+.track-field { display: flex; flex-direction: column; gap: 7px; }
+.track-field label {
+  font-size: 0.78rem; font-weight: 600; color: #b0acaa; letter-spacing: 0.03em;
+  display: flex; align-items: center; gap: 7px;
+}
+.track-field label i { color: #818cf8; font-size: 0.75rem; width: 14px; text-align: center; }
+.track-field input {
+  background: rgba(255,255,255,0.03);
+  border: 1.5px solid rgba(255,255,255,0.08);
+  border-radius: 12px; padding: 13px 16px;
+  color: #ede9de; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 0.9rem;
+  transition: all 0.22s ease; width: 100%; box-sizing: border-box;
+}
+.track-field input:focus {
+  outline: none; border-color: rgba(99,102,241,0.45);
+  background: rgba(99,102,241,0.03);
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.07);
+}
+.track-field input::placeholder { color: rgba(56,53,74,0.9); }
+
+.track-btn {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  width: 100%; padding: 15px;
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  border: none; border-radius: 14px;
+  color: #fff; font-family: 'Sora', sans-serif; font-size: 0.96rem; font-weight: 700;
+  cursor: pointer; text-decoration: none; letter-spacing: -0.01em;
+  transition: all 0.25s ease;
+  box-shadow: 0 8px 28px rgba(99,102,241,0.25);
+}
+.track-btn:hover {
+  background: linear-gradient(135deg, #7c7ff5, #6366f1);
+  transform: translateY(-2px); box-shadow: 0 12px 36px rgba(99,102,241,0.35);
+}
+
+/* ── Error Box ──────────────────────────────────────────────────── */
+.track-error {
+  background: rgba(239,68,68,0.07);
+  border: 1px solid rgba(239,68,68,0.22);
+  border-radius: 14px; padding: 14px 18px;
+  color: #f87171; font-size: 0.87rem;
+  display: flex; align-items: center; gap: 11px;
+  margin-bottom: 20px; animation: fadeUp 0.4s ease both;
+}
+.track-error i { font-size: 1rem; flex-shrink: 0; }
+
+/* ── Result Card ────────────────────────────────────────────────── */
+.track-result { animation: fadeUp 0.55s ease both 0.05s; }
+
+.track-result-hdr {
+  background: #0d0d1b;
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 22px; overflow: hidden;
+  margin-bottom: 16px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+}
+.track-result-top {
+  padding: 24px 26px;
+  background: linear-gradient(135deg, rgba(201,150,58,0.07), rgba(201,150,58,0.02));
+  border-bottom: 1px solid rgba(201,150,58,0.1);
+  display: flex; align-items: flex-start; justify-content: space-between;
+  flex-wrap: wrap; gap: 14px;
+}
+.track-ref-block { display: flex; flex-direction: column; gap: 5px; }
+.track-ref-label { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #78748f; }
+.track-ref-value {
+  font-family: 'Sora', sans-serif; font-size: 1.15rem; font-weight: 800;
+  color: #e8ba5a; letter-spacing: 0.05em; cursor: pointer;
+  display: flex; align-items: center; gap: 9px;
+}
+.track-ref-value .copy-ico {
+  font-size: 0.68rem; color: #78748f; background: rgba(255,255,255,0.05);
+  border-radius: 5px; padding: 3px 7px; transition: all 0.2s;
+}
+.track-ref-value:hover .copy-ico { color: #e8ba5a; }
+
+/* Status badge big */
+.track-status-big {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 16px; border-radius: 50px;
+  font-size: 0.82rem; font-weight: 700; letter-spacing: 0.04em;
+  border: 1px solid; flex-shrink: 0;
+}
+.tsb-pending   { background:rgba(245,158,11,0.1); color:#fbbf24; border-color:rgba(245,158,11,0.3); }
+.tsb-approved  { background:rgba(34,197,94,0.1);  color:#4ade80; border-color:rgba(34,197,94,0.3);  }
+.tsb-completed { background:rgba(201,150,58,0.1); color:#e8ba5a; border-color:rgba(201,150,58,0.3); }
+.tsb-rejected  { background:rgba(239,68,68,0.1);  color:#f87171; border-color:rgba(239,68,68,0.3);  }
+.ts-pulse { width:8px;height:8px;border-radius:50%;animation:tsPulse 1.5s ease-in-out infinite; }
+.ts-pulse-amber { background:#fbbf24; }
+.ts-pulse-green { background:#4ade80; }
+@keyframes tsPulse { 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:0.4;transform:scale(0.8);} }
+
+/* Detail rows */
+.track-rows { padding: 6px 0; }
+.track-row {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding: 13px 26px; border-bottom: 1px solid rgba(255,255,255,0.04);
+  gap: 16px; transition: background 0.15s;
+}
+.track-row:last-child { border: none; }
+.track-row:hover { background: rgba(255,255,255,0.015); }
+.track-row-lbl {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 0.8rem; color: #78748f; font-weight: 500; min-width: 110px; flex-shrink: 0;
+}
+.track-row-lbl i { width: 14px; text-align: center; color: #818cf8; font-size: 0.75rem; opacity: 0.8; }
+.track-row-val { font-size: 0.88rem; color: #ede9de; font-weight: 500; text-align: right; line-height: 1.5; }
+
+/* Payment summary row */
+.track-pay-row {
+  background: linear-gradient(135deg, rgba(201,150,58,0.06), rgba(201,150,58,0.02));
+  border-top: 1px solid rgba(201,150,58,0.12) !important;
+  padding: 20px 26px !important;
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;
+}
+.track-pay-cell { display: flex; flex-direction: column; gap: 5px; }
+.track-pay-cell-label { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #78748f; }
+.track-pay-cell-val { font-family: 'Sora', sans-serif; font-size: 1.15rem; font-weight: 800; line-height: 1; }
+.tpc-total   { color: #ede9de; }
+.tpc-paid    { color: #4ade80; }
+.tpc-balance { color: #f87171; }
+
+/* Progress bar */
+.track-progress-wrap { padding: 16px 26px; border-top: 1px solid rgba(255,255,255,0.04); }
+.track-progress-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.track-progress-pct { font-family: 'Sora', sans-serif; font-size: 0.8rem; font-weight: 700; color: #e8ba5a; }
+.track-pay-status-badge {
+  display: inline-flex; align-items: center; padding: 3px 11px;
+  border-radius: 50px; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.05em;
+  border: 1px solid;
+}
+.tpsb-unpaid  { background:rgba(120,116,143,0.12); color:#9c98b8; border-color:rgba(120,116,143,0.25); }
+.tpsb-half    { background:rgba(245,158,11,0.1);   color:#fbbf24; border-color:rgba(245,158,11,0.28); }
+.tpsb-partial { background:rgba(56,189,248,0.1);   color:#7dd3fc; border-color:rgba(56,189,248,0.25); }
+.tpsb-full    { background:rgba(34,197,94,0.1);    color:#4ade80; border-color:rgba(34,197,94,0.28);  }
+.track-bar-bg { background: rgba(255,255,255,0.06); border-radius: 50px; height: 10px; overflow: hidden; }
+.track-bar-fill { height: 100%; background: linear-gradient(90deg, #c9963a, #e8ba5a); border-radius: 50px; transition: width 1s cubic-bezier(0.4,0,0.2,1); }
+
+/* Pay CTA */
+.track-pay-cta {
+  background: #0d0d1b; border: 1px solid rgba(201,150,58,0.22);
+  border-radius: 18px; padding: 22px 26px;
+  margin-bottom: 16px; position: relative; overflow: hidden;
+}
+.track-pay-cta::before {
+  content:''; position:absolute; top:0;left:0;right:0;height:2px;
+  background: linear-gradient(90deg, transparent, #c9963a, transparent);
+}
+.track-pay-cta-inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.track-pay-cta-text h4 { font-family:'Sora',sans-serif; font-size:0.95rem; font-weight:800; color:#f4f0e4; margin:0 0 4px; }
+.track-pay-cta-text p  { font-size:0.78rem; color:#78748f; margin:0; }
+.track-pay-cta-btn {
+  display: flex; align-items: center; gap: 8px;
+  background: linear-gradient(135deg, #c9963a, #a07230);
+  border: none; border-radius: 12px; padding: 12px 22px;
+  color: #06060f; font-family:'Sora',sans-serif; font-size:0.88rem; font-weight:800;
+  cursor: pointer; text-decoration: none; white-space: nowrap;
+  transition: all 0.22s ease; box-shadow: 0 6px 20px rgba(201,150,58,0.25);
+  flex-shrink: 0;
+}
+.track-pay-cta-btn:hover { transform:translateY(-2px); box-shadow:0 10px 28px rgba(201,150,58,0.38); color:#06060f; text-decoration:none; }
+
+/* Payment history */
+.track-history-card {
+  background: #0d0d1b; border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 20px; overflow: hidden; margin-bottom: 16px;
+}
+.track-history-hdr {
+  padding: 18px 24px; border-bottom: 1px solid rgba(255,255,255,0.06);
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(255,255,255,0.02);
+}
+.track-history-hdr h3 { font-family:'Sora',sans-serif; font-size:0.8rem; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:#78748f; margin:0; }
+.track-history-hdr i  { color:#818cf8; }
+
+.track-pay-item {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding: 16px 24px; border-bottom: 1px solid rgba(255,255,255,0.04);
+  gap: 12px;
+}
+.track-pay-item:last-child { border: none; }
+.track-pay-left { display: flex; flex-direction: column; gap: 4px; }
+.track-pay-method { display: flex; align-items: center; gap: 8px; font-size: 0.88rem; font-weight: 700; color: #f4f0e4; }
+.track-pay-type-tag {
+  font-size: 0.65rem; font-weight: 700; letter-spacing: 0.06em;
+  background: rgba(201,150,58,0.1); color: #e8ba5a; border-radius: 5px; padding: 2px 7px;
+}
+.track-pay-ref  { font-size: 0.72rem; color: #78748f; font-family: monospace; }
+.track-pay-eref { font-size: 0.72rem; color: #93c5fd; font-family: monospace; }
+.track-pay-date { font-size: 0.7rem; color: #78748f; margin-top: 2px; }
+.track-pay-right { text-align: right; flex-shrink: 0; display: flex; flex-direction: column; gap: 5px; align-items: flex-end; }
+.track-pay-amount { font-family:'Sora',sans-serif; font-size:1.05rem; font-weight:800; color:#e8ba5a; }
+.track-pay-status-pill {
+  display:inline-flex;align-items:center;gap:5px;
+  padding:3px 10px;border-radius:50px;font-size:0.68rem;font-weight:700;border:1px solid;letter-spacing:0.04em;
+}
+.tpsp-pending  { background:rgba(245,158,11,0.1); color:#fbbf24; border-color:rgba(245,158,11,0.28); }
+.tpsp-verified { background:rgba(34,197,94,0.1);  color:#4ade80; border-color:rgba(34,197,94,0.28);  }
+.tpsp-rejected { background:rgba(239,68,68,0.1);  color:#f87171; border-color:rgba(239,68,68,0.28);  }
+
+/* Empty payments */
+.track-no-payments {
+  text-align: center; padding: 36px 24px;
+}
+.track-no-payments-ico { font-size: 2rem; margin-bottom: 10px; opacity: 0.3; }
+.track-no-payments p { font-size: 0.84rem; color: #78748f; margin: 0; }
+
+/* Tips card */
+.track-tips {
+  background: #0d0d1b; border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 18px; padding: 20px 24px; margin-bottom: 16px;
+}
+.track-tips h4 { font-family:'Sora',sans-serif; font-size:0.75rem; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:#78748f; margin:0 0 14px; }
+.track-tip { display:flex; align-items:flex-start; gap:11px; margin-bottom:11px; }
+.track-tip:last-child { margin:0; }
+.track-tip-ico { width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:0.82rem;flex-shrink:0; }
+.track-tip p { font-size:0.81rem; color:#78748f; margin:0; line-height:1.6; }
+.track-tip p strong { color:#ede9de; }
+
+/* Bottom actions */
+.track-bottom { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:28px; }
+.track-act-btn {
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  padding:13px; background:rgba(255,255,255,0.03);
+  border:1px solid rgba(255,255,255,0.07); border-radius:14px;
+  color:#78748f; font-family:'Plus Jakarta Sans',sans-serif;
+  font-size:0.86rem; font-weight:600; text-decoration:none;
+  transition:all 0.22s ease;
+}
+.track-act-btn:hover { background:rgba(255,255,255,0.06); border-color:rgba(255,255,255,0.13); color:#ede9de; text-decoration:none; transform:translateY(-1px); }
+
+/* Contact */
+.track-contact { text-align:center; }
+.track-contact p { font-size:0.78rem; color:#78748f; margin:0; }
+.track-contact a { color:#c9963a; text-decoration:none; font-weight:600; }
+.track-contact a:hover { color:#e8ba5a; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="track-page">
+<div class="track-wrap">
+
+  <!-- Hero -->
+  <div class="track-hero">
+    <div class="track-hero-icon">🔍</div>
+    <h1>Track Your <span>Booking</span></h1>
+    <p>Enter your booking reference and email address to see<br>your booking status, payment history, and more.</p>
+  </div>
+
+  <!-- Search Card -->
+  <div class="track-search-card">
+    <div class="track-search-hdr">
+      <div class="track-search-hdr-ico"><i class="fas fa-search"></i></div>
+      <h3>Find My Booking</h3>
+    </div>
+    <div class="track-search-body">
+      {% if error %}
+      <div class="track-error">
+        <i class="fas fa-exclamation-circle"></i>
+        {{ error }}
+      </div>
+      {% endif %}
+
+      <form method="POST" action="{{ url_for('track_booking') }}">
+        <div class="track-field-group">
+          <div class="track-field">
+            <label for="ref"><i class="fas fa-hashtag"></i> Booking Reference</label>
+            <input type="text" id="ref" name="ref" value="{{ ref }}"
+              placeholder="e.g. EVT-A1B2C3D4"
+              style="font-family:monospace;font-size:0.95rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;"
+              autocomplete="off" required>
+          </div>
+          <div class="track-field">
+            <label for="email"><i class="fas fa-envelope"></i> Email Address</label>
+            <input type="email" id="email" name="email" value="{{ email }}"
+              placeholder="juan@example.com" required>
+          </div>
+        </div>
+        <button type="submit" class="track-btn">
+          <i class="fas fa-search"></i> Track My Booking
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── RESULT ── -->
+  {% if booking %}
+  <div class="track-result">
+
+    <!-- Main Booking Card -->
+    <div class="track-result-hdr">
+
+      <!-- Top bar: reference + status -->
+      <div class="track-result-top">
+        <div class="track-ref-block">
+          <span class="track-ref-label">Booking Reference</span>
+          <span class="track-ref-value" onclick="copyRef('{{ booking.booking_reference }}')" title="Click to copy">
+            {{ booking.booking_reference }}
+            <span class="copy-ico" id="copyTag">COPY</span>
+          </span>
+        </div>
+        {% set s = booking.status %}
+        <span class="track-status-big tsb-{{ s }}">
+          {% if s == 'pending' %}<span class="ts-pulse ts-pulse-amber"></span> Pending Review
+          {% elif s == 'approved' %}<span class="ts-pulse ts-pulse-green"></span> Approved
+          {% elif s == 'completed' %}🏁 Completed
+          {% elif s == 'rejected' %}✗ Rejected
+          {% else %}{{ s | capitalize }}{% endif %}
+        </span>
+      </div>
+
+      <!-- Detail rows -->
+      <div class="track-rows">
+        <div class="track-row">
+          <span class="track-row-lbl"><i class="fas fa-user"></i> Customer</span>
+          <span class="track-row-val">{{ booking.customer_name }}</span>
+        </div>
+        <div class="track-row">
+          <span class="track-row-lbl"><i class="fas fa-box"></i> Equipment</span>
+          <span class="track-row-val" style="font-weight:600;color:#f4f0e4;">{{ booking.eq_name }}</span>
+        </div>
+        <div class="track-row">
+          <span class="track-row-lbl"><i class="fas fa-calendar"></i> Event Date</span>
+          <span class="track-row-val" style="font-weight:700;color:#f4f0e4;">{{ booking.event_date | dateformat }}</span>
+        </div>
+        <div class="track-row">
+          <span class="track-row-lbl"><i class="fas fa-clock"></i> Time</span>
+          <span class="track-row-val">{{ booking.start_time | timeformat }} — {{ booking.end_time | timeformat }}</span>
+        </div>
+        <div class="track-row">
+          <span class="track-row-lbl"><i class="fas fa-map-marker-alt"></i> Venue</span>
+          <span class="track-row-val">{{ booking.address }}</span>
+        </div>
+        <div class="track-row">
+          <span class="track-row-lbl"><i class="fas fa-tag"></i> Category</span>
+          <span class="track-row-val">
+            {{ '🎵' if booking.category=='sound' else '💡' if booking.category=='light' else '🎤' }}
+            {{ booking.category | capitalize }}
+          </span>
+        </div>
+        {% if booking.special_instructions %}
+        <div class="track-row">
+          <span class="track-row-lbl"><i class="fas fa-comment-alt"></i> Notes</span>
+          <span class="track-row-val" style="color:#78748f;font-style:italic;">{{ booking.special_instructions }}</span>
+        </div>
+        {% endif %}
+
+        <!-- Payment summary cells -->
+        {% set balance = booking.total_price - booking.amount_paid %}
+        <div class="track-row track-pay-row">
+          <div class="track-pay-cell">
+            <span class="track-pay-cell-label">Total</span>
+            <span class="track-pay-cell-val tpc-total">{{ booking.total_price | currency }}</span>
+          </div>
+          <div class="track-pay-cell">
+            <span class="track-pay-cell-label">Paid</span>
+            <span class="track-pay-cell-val tpc-paid">{{ booking.amount_paid | currency }}</span>
+          </div>
+          <div class="track-pay-cell">
+            <span class="track-pay-cell-label">Balance Due</span>
+            <span class="track-pay-cell-val {{ 'tpc-balance' if balance > 0 else 'tpc-paid' }}">
+              {{ balance | currency }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Progress bar -->
+      {% set pct = ((booking.amount_paid / booking.total_price) * 100) | round | int if booking.total_price > 0 else 0 %}
+      <div class="track-progress-wrap">
+        <div class="track-progress-top">
+          <span class="track-progress-pct">{{ pct }}% paid</span>
+          <span class="track-pay-status-badge tpsb-{{ booking.payment_status }}">
+            {{ {'unpaid':'Unpaid','half':'50% Paid','partial':'Partial','full':'Fully Paid'}.get(booking.payment_status, booking.payment_status) }}
+          </span>
+        </div>
+        <div class="track-bar-bg">
+          <div class="track-bar-fill" id="progressBar" style="width:0%"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pay CTA (if balance remains and not rejected) -->
+    {% if balance > 0 and booking.status != 'rejected' %}
+    <div class="track-pay-cta">
+      <div class="track-pay-cta-inner">
+        <div class="track-pay-cta-text">
+          <h4>💳 {{ 'Make Your First Payment' if booking.payment_status == 'unpaid' else 'Complete Your Payment' }}</h4>
+          <p>{{ balance | currency }} remaining — pay via GCash, Maya, or cash</p>
+        </div>
+        <a href="{{ url_for('payment_page', ref=booking.booking_reference) }}" class="track-pay-cta-btn">
+          <i class="fas fa-wallet"></i> Pay Now
+        </a>
+      </div>
+    </div>
+    {% elif booking.payment_status == 'full' %}
+    <div style="background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.18);border-radius:16px;padding:18px 22px;margin-bottom:16px;display:flex;align-items:center;gap:14px;">
+      <span style="font-size:1.6rem;">✅</span>
+      <div>
+        <div style="font-family:'Sora',sans-serif;font-size:0.92rem;font-weight:800;color:#4ade80;margin-bottom:2px;">Fully Paid!</div>
+        <div style="font-size:0.78rem;color:#78748f;">Your booking is fully settled. See you on event day!</div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Payment History -->
+    <div class="track-history-card">
+      <div class="track-history-hdr">
+        <i class="fas fa-history"></i>
+        <h3>Payment History</h3>
+        <span style="margin-left:auto;font-size:0.72rem;color:#78748f;background:rgba(255,255,255,0.05);padding:3px 10px;border-radius:50px;">{{ payments|length }} transaction{{ 's' if payments|length != 1 }}</span>
+      </div>
+
+      {% if payments %}
+        {% for p in payments %}
+        <div class="track-pay-item">
+          <div class="track-pay-left">
+            <div class="track-pay-method">
+              {{ '💚' if p.method=='gcash' else '🔵' if p.method=='maya' else '💵' }}
+              {{ p.method | upper }}
+              <span class="track-pay-type-tag">{{ {'full':'Full','half':'50% Down','partial':'Partial','custom':'Custom'}.get(p.payment_type, p.payment_type) }}</span>
+            </div>
+            <span class="track-pay-ref">{{ p.payment_reference }}</span>
+            {% if p.e_ref_number and p.e_ref_number != 'CASH' %}
+            <span class="track-pay-eref"><i class="fas fa-link" style="font-size:0.6rem;"></i> Ref: {{ p.e_ref_number }}</span>
+            {% endif %}
+            <span class="track-pay-date"><i class="fas fa-clock" style="font-size:0.6rem;opacity:0.6;"></i> {{ p.created_at[:16] if p.created_at else '—' }}</span>
+          </div>
+          <div class="track-pay-right">
+            <span class="track-pay-amount">{{ p.amount | currency }}</span>
+            <span class="track-pay-status-pill tpsp-{{ p.status }}">
+              {{ '⏳' if p.status=='pending' else '✅' if p.status=='verified' else '❌' }}
+              {{ p.status | capitalize }}
+            </span>
+            {% if p.status == 'pending' %}
+            <span style="font-size:0.68rem;color:#78748f;">Awaiting admin review</span>
+            {% elif p.status == 'rejected' and p.notes %}
+            <span style="font-size:0.68rem;color:#f87171;max-width:140px;text-align:right;">{{ p.notes }}</span>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+      <div class="track-no-payments">
+        <div class="track-no-payments-ico">💳</div>
+        <p>No payment transactions yet.<br>Use the Pay Now button above to get started.</p>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Status tips -->
+    <div class="track-tips">
+      <h4>Understanding Your Status</h4>
+      <div class="track-tip">
+        <div class="track-tip-ico" style="background:rgba(245,158,11,0.1);color:#fbbf24;">⏳</div>
+        <p><strong>Pending Review</strong> — Your booking was received and is being reviewed by our team.</p>
+      </div>
+      <div class="track-tip">
+        <div class="track-tip-ico" style="background:rgba(34,197,94,0.1);color:#4ade80;">✅</div>
+        <p><strong>Approved</strong> — Your booking is confirmed. Complete payment to finalize.</p>
+      </div>
+      <div class="track-tip">
+        <div class="track-tip-ico" style="background:rgba(201,150,58,0.1);color:#e8ba5a;">⏳</div>
+        <p><strong>Payment Pending</strong> — Your payment was submitted and is waiting for admin verification (usually within a few hours).</p>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="track-bottom">
+      <a href="{{ url_for('index') }}" class="track-act-btn"><i class="fas fa-home"></i> Home</a>
+      <a href="{{ url_for('book') }}"  class="track-act-btn"><i class="fas fa-plus"></i> New Booking</a>
+    </div>
+
+  </div><!-- /.track-result -->
+
+  {% elif searched and not error %}
+  <!-- searched but not found (handled by error) -->
+  {% endif %}
+
+  <!-- Contact -->
+  <div class="track-contact">
+    <p>Need help? Call <a href="tel:+639123456789">+63 912 345 6789</a> or email <a href="mailto:info@soundlight.ph">info@soundlight.ph</a></p>
+  </div>
+
+</div>
+</div>
+
+<script>
+// Animate progress bar on load
+{% if booking %}
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    document.getElementById('progressBar').style.width = '{{ [pct, 100]|min }}%';
+  }, 300);
+});
+
+// Copy reference
+function copyRef(ref) {
+  navigator.clipboard.writeText(ref).then(() => {
+    const tag = document.getElementById('copyTag');
+    tag.textContent = 'COPIED!';
+    tag.style.color = '#4ade80';
+    setTimeout(() => { tag.textContent = 'COPY'; tag.style.color = ''; }, 2000);
+  });
+}
+{% endif %}
+
+// Auto-uppercase the ref input
+document.getElementById('ref').addEventListener('input', function() {
+  this.value = this.value.toUpperCase();
+});
+</script>
+{% endblock %}
