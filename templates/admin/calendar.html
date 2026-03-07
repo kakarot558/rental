@@ -5,31 +5,61 @@
 
 {% block extra_head %}
 <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet">
+<style>
+  .fc { --fc-border-color: rgba(255,255,255,.07); --fc-today-bg-color: rgba(201,150,58,.06); --fc-page-bg-color: transparent; color: #c8c4d8; }
+  .fc .fc-button { background: rgba(255,255,255,.04); border-color: rgba(255,255,255,.08); color: #7a7690; font-family: 'Plus Jakarta Sans',sans-serif; font-size: .77rem; font-weight: 600; border-radius: 9px !important; transition: all .2s; }
+  .fc .fc-button:hover { background: rgba(255,255,255,.07); color: #edeae0; }
+  .fc .fc-button-primary:not(:disabled).fc-button-active { background: rgba(201,150,58,.14) !important; border-color: rgba(201,150,58,.28) !important; color: #e8ba5a !important; }
+  .fc .fc-toolbar-title { font-family: 'Sora',sans-serif; font-size: 1rem; font-weight: 800; color: #f4f0e4; }
+  .fc .fc-col-header-cell-cushion { font-size: .68rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: #7a7690; }
+  .fc .fc-daygrid-day-number { color: #7a7690; font-size: .77rem; }
+  .fc .fc-daygrid-day.fc-day-today .fc-daygrid-day-number { color: #e8ba5a; font-weight: 700; }
+  .fc .fc-event { border-radius: 6px; border: none; font-size: .74rem; font-weight: 600; padding: 2px 6px; cursor: pointer; }
+</style>
 {% endblock %}
 
 {% block content %}
-<div style="display:flex;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap;align-items:center;">
-  <div style="display:flex;gap:1rem;flex-wrap:wrap;font-size:0.82rem;">
-    <span style="display:flex;align-items:center;gap:0.4rem;"><span style="width:12px;height:12px;background:#f59e0b;border-radius:3px;display:inline-block;"></span> Pending</span>
-    <span style="display:flex;align-items:center;gap:0.4rem;"><span style="width:12px;height:12px;background:#10b981;border-radius:3px;display:inline-block;"></span> Approved</span>
+
+<!-- Legend + controls -->
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:12px;">
+  <div style="display:flex;gap:16px;flex-wrap:wrap;">
+    <span style="display:flex;align-items:center;gap:7px;font-size:.8rem;color:#7a7690;">
+      <span style="width:11px;height:11px;background:#f59e0b;border-radius:3px;display:inline-block;"></span> Pending
+    </span>
+    <span style="display:flex;align-items:center;gap:7px;font-size:.8rem;color:#7a7690;">
+      <span style="width:11px;height:11px;background:#22c55e;border-radius:3px;display:inline-block;"></span> Approved
+    </span>
+    <span style="display:flex;align-items:center;gap:7px;font-size:.8rem;color:#7a7690;">
+      <span style="width:11px;height:11px;background:#e8ba5a;border-radius:3px;display:inline-block;"></span> Completed
+    </span>
   </div>
+  <a href="{{ url_for('admin_bookings') }}" class="btn btn-ghost btn-sm">
+    <i class="fas fa-list"></i> View All Bookings
+  </a>
 </div>
 
-<div id="calendar"></div>
+<!-- Calendar -->
+<div class="admin-card" style="padding:18px;">
+  <div id="calendar"></div>
+</div>
 
 <!-- Event Detail Modal -->
-<div class="modal-overlay" id="eventModal">
-  <div class="modal">
-    <h3 id="modalTitle">Booking Details</h3>
-    <div id="modalContent"></div>
-    <div class="modal-btns">
-      <button class="btn btn-outline" onclick="closeModal()">Close</button>
-      <a id="modalBookingsLink" href="{{ url_for('admin_bookings') }}" class="btn btn-primary">
+<div class="modal-overlay" id="eventModal" style="display:none;">
+  <div class="modal" style="max-width:420px;text-align:left;">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;">
+      <h3 id="modalTitle" style="font-size:1rem;margin:0;"></h3>
+      <button onclick="closeModal()" style="background:none;border:none;color:#7a7690;cursor:pointer;font-size:1.1rem;padding:0;line-height:1;"><i class="fas fa-times"></i></button>
+    </div>
+    <div id="modalContent" style="margin-bottom:20px;"></div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-ghost" onclick="closeModal()" style="flex:1;justify-content:center;">Close</button>
+      <a id="modalBookingsLink" href="{{ url_for('admin_bookings') }}" class="btn btn-primary" style="flex:2;justify-content:center;">
         <i class="fas fa-external-link-alt"></i> View Bookings
       </a>
     </div>
   </div>
 </div>
+
 {% endblock %}
 
 {% block extra_scripts %}
@@ -44,25 +74,39 @@ document.addEventListener('DOMContentLoaded', () => {
     headerToolbar: { left:'prev,next today', center:'title', right:'dayGridMonth,listWeek' },
     eventClick: function(info) {
       const p = info.event.extendedProps;
-      document.getElementById('modalTitle').textContent = '📋 ' + p.customer;
+      document.getElementById('modalTitle').textContent = p.customer;
       document.getElementById('modalContent').innerHTML = `
-        <p><strong>Reference:</strong> <code style="color:var(--primary)">${p.ref}</code></p>
-        <p><strong>Customer:</strong> ${p.customer}</p>
-        <p><strong>Equipment:</strong> ${p.equipment}</p>
-        <p><strong>Date:</strong> ${info.event.startStr.split('T')[0]}</p>
-        <p><strong>Time:</strong> ${info.event.startStr.split('T')[1]?.substring(0,5)} — ${info.event.endStr?.split('T')[1]?.substring(0,5)}</p>
-        <p><strong>Status:</strong> <span class="badge badge-${p.status}">${p.status}</span></p>
-      `.replace(/<p>/g,'<p style="margin-bottom:0.5rem;font-size:0.9rem;">');
-      document.getElementById('eventModal').classList.add('active');
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:.83rem;">
+            <span style="color:#7a7690;">Reference</span>
+            <code style="font-size:.78rem;">${p.ref}</code>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:.83rem;">
+            <span style="color:#7a7690;">Equipment</span>
+            <span style="color:#edeae0;font-weight:500;">${p.equipment}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:.83rem;">
+            <span style="color:#7a7690;">Date</span>
+            <span style="color:#edeae0;">${info.event.startStr.split('T')[0]}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:.83rem;">
+            <span style="color:#7a7690;">Time</span>
+            <span style="color:#edeae0;">${(info.event.startStr.split('T')[1]||'').substring(0,5)} — ${(info.event.endStr?.split('T')[1]||'').substring(0,5)}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;font-size:.83rem;">
+            <span style="color:#7a7690;">Status</span>
+            <span class="badge badge-${p.status}"><span class="badge-dot"></span>${p.status}</span>
+          </div>
+        </div>`;
+      document.getElementById('eventModal').style.display = 'flex';
     },
-    height: 'auto',
-    dayCellClassNames: 'fc-daygrid-day'
+    height: 'auto'
   });
   cal.render();
 });
 
 function closeModal() {
-  document.getElementById('eventModal').classList.remove('active');
+  document.getElementById('eventModal').style.display = 'none';
 }
 document.getElementById('eventModal').addEventListener('click', e => {
   if (e.target === document.getElementById('eventModal')) closeModal();

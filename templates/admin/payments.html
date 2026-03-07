@@ -6,94 +6,92 @@
 {% block content %}
 
 <!-- Stat Cards -->
-<div class="stats-grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));margin-bottom:24px;">
-  <div class="stat-card warning">
-    <span class="stat-icon">⏳</span>
-    <span class="stat-value">{{ totals.count_pending }}</span>
-    <span class="stat-label">Pending Verification</span>
+<div class="stats-grid" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr));">
+  <div class="stat-card warning sc-warning">
+    <div class="stat-card-top"><div class="stat-icon-box"><i class="fas fa-hourglass-half"></i></div></div>
+    <div class="stat-value">{{ totals.count_pending }}</div>
+    <div class="stat-label">Pending Verification</div>
   </div>
-  <div class="stat-card gold">
-    <span class="stat-icon">💰</span>
-    <span class="stat-value" style="font-size:1.35rem;">{{ totals.verified | currency }}</span>
-    <span class="stat-label">Total Verified</span>
+  <div class="stat-card gold sc-gold">
+    <div class="stat-card-top"><div class="stat-icon-box"><i class="fas fa-check-double"></i></div></div>
+    <div class="stat-value sm">{{ totals.verified | currency }}</div>
+    <div class="stat-label">Total Verified</div>
   </div>
-  <div class="stat-card primary">
-    <span class="stat-icon">⌛</span>
-    <span class="stat-value" style="font-size:1.35rem;">{{ totals.pending | currency }}</span>
-    <span class="stat-label">Awaiting Verification</span>
+  <div class="stat-card primary sc-primary">
+    <div class="stat-card-top"><div class="stat-icon-box"><i class="fas fa-clock"></i></div></div>
+    <div class="stat-value sm">{{ totals.pending | currency }}</div>
+    <div class="stat-label">Awaiting Verification</div>
   </div>
-  <div class="stat-card" style="border-color:rgba(239,68,68,0.2);">
-    <span class="stat-icon">❌</span>
-    <span class="stat-value" style="font-size:1.35rem;color:#f87171;">{{ totals.rejected | currency }}</span>
-    <span class="stat-label">Rejected</span>
+  <div class="stat-card danger sc-danger">
+    <div class="stat-card-top"><div class="stat-icon-box"><i class="fas fa-ban"></i></div></div>
+    <div class="stat-value sm" style="color:#f87171;">{{ totals.rejected | currency }}</div>
+    <div class="stat-label">Rejected</div>
   </div>
 </div>
 
-<!-- Filters -->
-<div class="filter-bar" style="margin-bottom:20px;">
-  <form method="GET" style="display:flex;gap:14px;flex-wrap:wrap;width:100%;align-items:flex-end;">
-    <div class="form-group" style="flex:1;min-width:140px;">
+<!-- Filter Bar -->
+<div class="filter-bar">
+  <form method="GET">
+    <div class="form-group">
       <label>Status</label>
       <select name="status">
         <option value="">All Status</option>
-        <option value="pending"  {{ 'selected' if status_filter=='pending' }}>⏳ Pending</option>
-        <option value="verified" {{ 'selected' if status_filter=='verified' }}>✅ Verified</option>
-        <option value="rejected" {{ 'selected' if status_filter=='rejected' }}>❌ Rejected</option>
+        <option value="pending"  {{ 'selected' if status_filter=='pending' }}>Pending</option>
+        <option value="verified" {{ 'selected' if status_filter=='verified' }}>Verified</option>
+        <option value="rejected" {{ 'selected' if status_filter=='rejected' }}>Rejected</option>
       </select>
     </div>
-    <div class="form-group" style="flex:1;min-width:140px;">
+    <div class="form-group">
       <label>Method</label>
       <select name="method">
         <option value="">All Methods</option>
-        <option value="gcash" {{ 'selected' if method_filter=='gcash' }}>💚 GCash</option>
-        <option value="maya"  {{ 'selected' if method_filter=='maya' }}>🔵 Maya</option>
-        <option value="cash"  {{ 'selected' if method_filter=='cash' }}>💵 Cash</option>
+        <option value="gcash" {{ 'selected' if method_filter=='gcash' }}>GCash</option>
+        <option value="maya"  {{ 'selected' if method_filter=='maya' }}>Maya</option>
+        <option value="cash"  {{ 'selected' if method_filter=='cash' }}>Cash</option>
       </select>
     </div>
-    <div style="display:flex;gap:8px;align-items:flex-end;">
+    <div class="filter-actions">
       <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-filter"></i> Filter</button>
-      <a href="{{ url_for('admin_payments') }}" class="btn btn-outline btn-sm">Clear</a>
+      <a href="{{ url_for('admin_payments') }}" class="btn btn-ghost btn-sm">Clear</a>
     </div>
   </form>
 </div>
 
-<!-- Record Manual Payment -->
-<div class="table-card" style="margin-bottom:20px;">
-  <div class="table-card-header">
+<!-- Record Manual Payment (collapsible) -->
+<div class="admin-card" style="margin-bottom:18px;">
+  <div class="admin-card-header" style="cursor:pointer;" onclick="this.nextElementSibling.classList.toggle('d-none')">
     <h3><i class="fas fa-plus-circle"></i> Record Cash / Manual Payment</h3>
-    <button class="btn btn-outline btn-sm" onclick="document.getElementById('recordForm').classList.toggle('hidden-form')">
-      <i class="fas fa-chevron-down"></i> Toggle
-    </button>
+    <button type="button" class="btn btn-ghost btn-sm"><i class="fas fa-chevron-down"></i></button>
   </div>
-  <div id="recordForm" class="hidden-form">
-    <form method="POST" action="{{ url_for('record_payment') }}" style="padding:20px 24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;align-items:end;">
-      <div class="form-group">
+  <div class="d-none" id="recordFormWrap">
+    <form method="POST" action="{{ url_for('record_payment') }}" style="padding:18px 20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;align-items:end;">
+      <div class="aform-group">
         <label>Booking ID</label>
-        <input type="number" name="booking_id" placeholder="e.g. 3" required>
+        <input type="number" name="booking_id" class="aform-control" placeholder="e.g. 3" required>
       </div>
-      <div class="form-group">
+      <div class="aform-group">
         <label>Amount (₱)</label>
-        <input type="number" name="amount" step="0.01" min="1" placeholder="0.00" required>
+        <input type="number" name="amount" class="aform-control" step="0.01" min="1" placeholder="0.00" required>
       </div>
-      <div class="form-group">
+      <div class="aform-group">
         <label>Method</label>
-        <select name="method">
+        <select name="method" class="aform-control">
           <option value="cash">💵 Cash</option>
           <option value="gcash">💚 GCash</option>
           <option value="maya">🔵 Maya</option>
         </select>
       </div>
-      <div class="form-group">
+      <div class="aform-group">
         <label>Payment Type</label>
-        <select name="payment_type">
+        <select name="payment_type" class="aform-control">
           <option value="full">Full Payment</option>
           <option value="half">50% Down</option>
           <option value="partial">Partial</option>
         </select>
       </div>
-      <div class="form-group" style="grid-column:span 2;">
+      <div class="aform-group" style="grid-column:span 2;">
         <label>Notes</label>
-        <input type="text" name="notes" placeholder="e.g. Cash received in person">
+        <input type="text" name="notes" class="aform-control" placeholder="e.g. Cash received in person">
       </div>
       <div>
         <button type="submit" class="btn btn-success btn-sm" style="width:100%;justify-content:center;">
@@ -105,13 +103,14 @@
 </div>
 
 <!-- Payments Table -->
-<div class="table-card">
-  <div class="table-card-header">
-    <h3><i class="fas fa-list"></i> Payment Submissions ({{ payments|length }})</h3>
+<div class="admin-card">
+  <div class="admin-card-header">
+    <h3><i class="fas fa-receipt"></i> Payment Submissions</h3>
+    <span class="count-pill">{{ payments|length }} records</span>
   </div>
   <div class="table-wrap">
     {% if payments %}
-    <table>
+    <table class="admin-table">
       <thead>
         <tr>
           <th>Payment Ref</th>
@@ -120,74 +119,72 @@
           <th>Method</th>
           <th>Type</th>
           <th>Amount</th>
-          <th>E-Wallet Ref</th>
+          <th>E-Wallet Info</th>
           <th>Status</th>
-          <th>Date</th>
+          <th>Submitted</th>
           <th>Actions</th>
         </tr>
       </thead>
       <tbody>
         {% for p in payments %}
         <tr>
-          <td><code>{{ p.payment_reference }}</code></td>
-          <td>
-            <code style="font-size:0.72rem;">{{ p.booking_reference }}</code>
-            <div style="font-size:0.7rem;color:#78748f;">#{{ p.booking_id }}</div>
+          <td data-label="Ref"><code>{{ p.payment_reference }}</code></td>
+          <td data-label="Booking">
+            <code style="font-size:.72rem;">{{ p.booking_reference }}</code>
+            <div style="font-size:.7rem;color:#7a7690;">#{{ p.booking_id }}</div>
           </td>
-          <td>
-            <div style="font-weight:600;font-size:0.85rem;">{{ p.customer_name }}</div>
-            <div style="font-size:0.72rem;color:#78748f;">Total: {{ p.total_price | currency }}</div>
+          <td data-label="Customer">
+            <div style="font-weight:600;font-size:.84rem;color:#edeae0;">{{ p.customer_name }}</div>
+            <div style="font-size:.7rem;color:#7a7690;">Total: {{ p.total_price | currency }}</div>
           </td>
-          <td>
+          <td data-label="Method">
             <span class="badge badge-method-{{ p.method }}">
               {{ '💚' if p.method=='gcash' else '🔵' if p.method=='maya' else '💵' }}
               {{ p.method | upper }}
             </span>
           </td>
-          <td>
+          <td data-label="Type">
             <span class="badge badge-paytype-{{ p.payment_type }}">
               {{ {'full':'Full','half':'50%','partial':'Partial','custom':'Custom'}.get(p.payment_type, p.payment_type) }}
             </span>
           </td>
-          <td style="color:#e8ba5a;font-weight:800;font-size:0.95rem;">{{ p.amount | currency }}</td>
-          <td>
+          <td data-label="Amount" style="font-family:'Sora',sans-serif;font-weight:800;font-size:.95rem;color:#e8ba5a;">{{ p.amount | currency }}</td>
+          <td data-label="E-Wallet">
             {% if p.e_ref_number and p.e_ref_number != 'CASH' %}
-            <code style="font-size:0.75rem;color:#93c5fd;">{{ p.e_ref_number }}</code>
-            {% if p.sender_name %}
-            <div style="font-size:0.7rem;color:#78748f;">{{ p.sender_name }}</div>
-            <div style="font-size:0.7rem;color:#78748f;">{{ p.sender_number }}</div>
-            {% endif %}
-            {% else %}
-            <span style="color:#78748f;font-size:0.8rem;">—</span>
-            {% endif %}
-          </td>
-          <td>
-            <span class="badge badge-pay-{{ p.status }}">
-              {{ {'pending':'⏳ Pending','verified':'✅ Verified','rejected':'❌ Rejected'}.get(p.status, p.status) }}
-            </span>
-            {% if p.verified_by %}
-            <div style="font-size:0.68rem;color:#78748f;margin-top:3px;">by {{ p.verified_by }}</div>
-            {% endif %}
-          </td>
-          <td style="font-size:0.75rem;color:#78748f;white-space:nowrap;">
-            {{ p.created_at[:16] if p.created_at else '—' }}
-          </td>
-          <td>
-            {% if p.status == 'pending' %}
-            <div class="action-group">
-              <button class="btn btn-success btn-sm"
-                onclick="openVerifyModal({{ p.id }}, 'verify', '{{ p.payment_reference }}', {{ p.amount }})"
-                title="Verify">
-                <i class="fas fa-check"></i>
-              </button>
-              <button class="btn btn-danger btn-sm"
-                onclick="openVerifyModal({{ p.id }}, 'reject', '{{ p.payment_reference }}', {{ p.amount }})"
-                title="Reject">
-                <i class="fas fa-times"></i>
-              </button>
+            <div class="sender-info">
+              <code style="font-size:.74rem;color:#93c5fd;">{{ p.e_ref_number }}</code>
+              {% if p.sender_name %}
+              <div class="sender-meta">{{ p.sender_name }}</div>
+              <div class="sender-meta">{{ p.sender_number }}</div>
+              {% endif %}
             </div>
             {% else %}
-            <span style="font-size:0.75rem;color:#78748f;">{{ p.status }}</span>
+            <span style="color:#7a7690;font-size:.8rem;">—</span>
+            {% endif %}
+          </td>
+          <td data-label="Status">
+            <span class="badge badge-pay-{{ p.status }}"><span class="badge-dot"></span>
+              {{ {'pending':'Pending','verified':'Verified','rejected':'Rejected'}.get(p.status, p.status) }}
+            </span>
+            {% if p.verified_by %}
+            <div style="font-size:.67rem;color:#7a7690;margin-top:3px;">by {{ p.verified_by }}</div>
+            {% endif %}
+          </td>
+          <td data-label="Submitted" style="font-size:.74rem;color:#7a7690;white-space:nowrap;">
+            {{ p.created_at[:16] if p.created_at else '—' }}
+          </td>
+          <td data-label="Actions">
+            {% if p.status == 'pending' %}
+            <div class="action-group">
+              <button class="btn btn-success btn-sm btn-icon"
+                onclick="openVerifyModal({{ p.id }}, 'verify', '{{ p.payment_reference }}', {{ p.amount }})"
+                title="Verify"><i class="fas fa-check"></i></button>
+              <button class="btn btn-danger btn-sm btn-icon"
+                onclick="openVerifyModal({{ p.id }}, 'reject', '{{ p.payment_reference }}', {{ p.amount }})"
+                title="Reject"><i class="fas fa-times"></i></button>
+            </div>
+            {% else %}
+            <span style="font-size:.74rem;color:#7a7690;">{{ p.status }}</span>
             {% endif %}
           </td>
         </tr>
@@ -195,59 +192,60 @@
       </tbody>
     </table>
     {% else %}
-    <div class="empty-state">
-      <span class="empty-icon">💳</span>
-      <h3>No payments found</h3>
-      <p>Payment submissions from customers will appear here.</p>
+    <div style="text-align:center;padding:64px 24px;">
+      <div style="font-size:3rem;margin-bottom:14px;opacity:.2;">💳</div>
+      <div style="font-size:1rem;font-weight:700;color:#c8c4d8;margin-bottom:6px;">No payments found</div>
+      <div style="font-size:.84rem;color:#7a7690;">Payment submissions from customers will appear here.</div>
     </div>
     {% endif %}
   </div>
 </div>
 
 <!-- Verify / Reject Modal -->
-<div class="modal-overlay" id="verifyModal">
-  <div class="modal" style="max-width:420px;">
-    <h3 id="modalTitle">Verify Payment</h3>
-    <p id="modalDesc" style="color:#78748f;font-size:0.88rem;margin-bottom:16px;"></p>
+<div class="modal-overlay" id="verifyModal" style="display:none;">
+  <div class="modal" style="max-width:400px;">
+    <div style="margin-bottom:16px;">
+      <h3 id="modalTitle" style="margin-bottom:6px;"></h3>
+      <p id="modalDesc" style="color:#7a7690;font-size:.86rem;margin:0;"></p>
+    </div>
     <form method="POST" id="verifyForm">
-      <div class="form-group" style="margin-bottom:14px;">
-        <label>Notes / Reason (optional)</label>
-        <textarea name="notes" id="modalNotes" rows="2"
-          placeholder="e.g. Verified via GCash statement..."></textarea>
+      <div class="aform-group" style="margin-bottom:16px;">
+        <label>Notes / Reason <span style="color:#7a7690;">(optional)</span></label>
+        <textarea name="notes" id="modalNotes" class="aform-control" rows="2" placeholder="e.g. Verified via GCash statement…"></textarea>
       </div>
       <input type="hidden" name="action" id="modalAction">
       <div style="display:flex;gap:10px;">
-        <button type="button" class="btn btn-outline" onclick="closeVerifyModal()" style="flex:1;justify-content:center;">Cancel</button>
+        <button type="button" class="btn btn-ghost" onclick="closeVerifyModal()" style="flex:1;justify-content:center;">Cancel</button>
         <button type="submit" class="btn btn-primary" id="modalSubmitBtn" style="flex:2;justify-content:center;">Confirm</button>
       </div>
     </form>
   </div>
 </div>
 
+<style>.d-none{display:none!important;}</style>
 {% endblock %}
 
 {% block extra_scripts %}
 <script>
 function openVerifyModal(pid, action, ref, amount) {
-  const modal = document.getElementById('verifyModal');
-  const form  = document.getElementById('verifyForm');
-  const isVerify = action === 'verify';
-  document.getElementById('modalTitle').textContent = isVerify ? '✅ Verify Payment' : '❌ Reject Payment';
+  const isV = action === 'verify';
+  document.getElementById('modalTitle').textContent = isV ? 'Verify Payment' : 'Reject Payment';
+  document.getElementById('modalTitle').style.color = isV ? '#4ade80' : '#f87171';
   document.getElementById('modalDesc').innerHTML =
-    `Payment <code>${ref}</code> — Amount: <strong>₱${parseFloat(amount).toLocaleString('en-PH',{minimumFractionDigits:2})}</strong>`;
+    `Payment <code>${ref}</code> &mdash; <strong style="color:#e8ba5a;">₱${parseFloat(amount).toLocaleString('en-PH',{minimumFractionDigits:2})}</strong>`;
   document.getElementById('modalAction').value = action;
-  document.getElementById('modalNotes').placeholder = isVerify
+  document.getElementById('modalNotes').placeholder = isV
     ? 'e.g. Verified via GCash app statement'
     : 'e.g. Reference number not found';
   const btn = document.getElementById('modalSubmitBtn');
-  btn.className = isVerify ? 'btn btn-success' : 'btn btn-danger';
-  btn.textContent = isVerify ? '✅ Verify' : '❌ Reject';
+  btn.className = isV ? 'btn btn-success' : 'btn btn-danger';
   btn.style.flex = '2'; btn.style.justifyContent = 'center';
-  form.action = `/admin/payments/${pid}/verify`;
-  modal.classList.add('active');
+  btn.innerHTML = isV ? '<i class="fas fa-check"></i> Verify' : '<i class="fas fa-times"></i> Reject';
+  document.getElementById('verifyForm').action = `/admin/payments/${pid}/verify`;
+  document.getElementById('verifyModal').style.display = 'flex';
 }
 function closeVerifyModal() {
-  document.getElementById('verifyModal').classList.remove('active');
+  document.getElementById('verifyModal').style.display = 'none';
 }
 document.getElementById('verifyModal').addEventListener('click', e => {
   if (e.target === document.getElementById('verifyModal')) closeVerifyModal();

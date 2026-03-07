@@ -4,64 +4,95 @@
 {% block page_subtitle %}Revenue analytics and booking summaries{% endblock %}
 
 {% block content %}
-<!-- Date Filter -->
+
+<!-- Filter Bar -->
 <div class="filter-bar">
-  <form method="GET" style="display:flex;gap:1rem;flex-wrap:wrap;width:100%;align-items:flex-end;">
-    <div class="form-group" style="flex:1;min-width:160px;">
+  <form method="GET">
+    <div class="form-group">
       <label>From Date</label>
       <input type="date" name="date_from" value="{{ date_from }}">
     </div>
-    <div class="form-group" style="flex:1;min-width:160px;">
+    <div class="form-group">
       <label>To Date</label>
       <input type="date" name="date_to" value="{{ date_to }}">
     </div>
-    <div style="display:flex;gap:0.5rem;align-items:flex-end;">
+    <div class="filter-actions">
       <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-filter"></i> Filter</button>
-      <a href="{{ url_for('admin_reports') }}" class="btn btn-outline btn-sm">Clear</a>
+      <a href="{{ url_for('admin_reports') }}" class="btn btn-ghost btn-sm">Clear</a>
       <a href="{{ url_for('admin_reports', date_from=date_from, date_to=date_to, download='csv') }}"
-        class="btn btn-success btn-sm"><i class="fas fa-download"></i> CSV</a>
+         class="btn btn-success btn-sm"><i class="fas fa-download"></i> CSV</a>
     </div>
   </form>
 </div>
 
-<!-- Revenue Summary -->
-<div class="report-summary">
-  <div class="rev-card">
-    <h4>Total Revenue</h4>
-    <div class="amount">{{ total_rev | currency }}</div>
+<!-- Revenue Summary Cards -->
+<div class="stats-grid" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr));margin-bottom:20px;">
+  <div class="stat-card gold sc-gold">
+    <div class="stat-card-top"><div class="stat-icon-box"><i class="fas fa-coins"></i></div></div>
+    <div class="stat-value sm">{{ total_rev | currency }}</div>
+    <div class="stat-label">Total Revenue</div>
   </div>
   {% for cat, rev in by_cat.items() %}
-  <div class="rev-card">
-    <h4>{{ cat | capitalize }} Revenue</h4>
-    <div class="amount" style="font-size:1.2rem;">{{ rev | currency }}</div>
+  <div class="stat-card sc-primary" style="border-color:rgba(255,255,255,.07);">
+    <div class="stat-card-top">
+      <div class="stat-icon-box">{{ '🎵' if cat=='sound' else '💡' if cat=='light' else '🎤' }}</div>
+    </div>
+    <div class="stat-value sm">{{ rev | currency }}</div>
+    <div class="stat-label">{{ cat | capitalize }} Revenue</div>
   </div>
   {% endfor %}
-  <div class="rev-card">
-    <h4>Total Bookings</h4>
-    <div class="amount" style="color:var(--primary);">{{ rows|length }}</div>
+  <div class="stat-card sc-primary" style="border-color:rgba(255,255,255,.07);">
+    <div class="stat-card-top"><div class="stat-icon-box"><i class="fas fa-list"></i></div></div>
+    <div class="stat-value" style="color:#93c5fd;">{{ rows|length }}</div>
+    <div class="stat-label">Total Bookings</div>
   </div>
 </div>
 
-<!-- Category Chart -->
-{% if by_cat %}
-<div class="table-card" style="margin-bottom:2rem;">
-  <div class="table-card-header">
-    <h3><i class="fas fa-chart-pie" style="color:var(--primary);margin-right:0.5rem;"></i> Revenue by Category</h3>
+<!-- Two-col: chart + table -->
+<div style="display:grid;grid-template-columns:340px 1fr;gap:18px;align-items:start;margin-bottom:18px;">
+  {% if by_cat %}
+  <div class="admin-card" style="margin-bottom:0;">
+    <div class="admin-card-header"><h3><i class="fas fa-chart-pie"></i> Revenue by Category</h3></div>
+    <div style="padding:20px;max-width:300px;margin:0 auto;">
+      <canvas id="catChart"></canvas>
+    </div>
   </div>
-  <div style="padding:1.5rem;max-width:400px;margin:0 auto;">
-    <canvas id="catChart"></canvas>
+  {% endif %}
+
+  <!-- Quick Summary -->
+  <div class="admin-card" style="margin-bottom:0;">
+    <div class="admin-card-header"><h3><i class="fas fa-table"></i> Summary</h3></div>
+    <div class="admin-card-body" style="padding:16px 20px;">
+      <div style="display:flex;flex-direction:column;gap:0;">
+        {% for r in rows[:6] %}
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04);gap:10px;">
+          <div style="min-width:0;">
+            <div style="font-size:.84rem;font-weight:600;color:#edeae0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ r.customer_name }}</div>
+            <div style="font-size:.7rem;color:#7a7690;">{{ r.eq_name }} · {{ r.event_date | dateformat }}</div>
+          </div>
+          <div style="text-align:right;flex-shrink:0;">
+            <div style="font-family:'Sora',sans-serif;font-weight:700;color:#e8ba5a;font-size:.88rem;">{{ r.total_price | currency }}</div>
+            <span class="badge badge-{{ r.status }}" style="font-size:.58rem;">{{ r.status }}</span>
+          </div>
+        </div>
+        {% endfor %}
+        {% if rows|length > 6 %}
+        <div style="text-align:center;padding:10px 0;font-size:.75rem;color:#7a7690;">…and {{ rows|length - 6 }} more in the table below</div>
+        {% endif %}
+      </div>
+    </div>
   </div>
 </div>
-{% endif %}
 
-<!-- Bookings Table -->
-<div class="table-card">
-  <div class="table-card-header">
-    <h3><i class="fas fa-table" style="color:var(--primary);margin-right:0.5rem;"></i> Booking Records ({{ rows|length }})</h3>
+<!-- Full Records Table -->
+<div class="admin-card">
+  <div class="admin-card-header">
+    <h3><i class="fas fa-list"></i> Booking Records</h3>
+    <span class="count-pill">{{ rows|length }} records</span>
   </div>
   <div class="table-wrap">
     {% if rows %}
-    <table>
+    <table class="admin-table">
       <thead>
         <tr>
           <th>Reference</th>
@@ -77,56 +108,62 @@
       <tbody>
         {% for r in rows %}
         <tr>
-          <td><code style="color:var(--primary);font-size:0.78rem;">{{ r.booking_reference }}</code></td>
-          <td>{{ r.customer_name }}</td>
-          <td>{{ r.eq_name }}</td>
-          <td><span class="badge badge-{{ r.category }}">{{ r.category }}</span></td>
-          <td>{{ r.event_date | dateformat }}</td>
-          <td style="font-size:0.8rem;color:var(--text-muted);">{{ r.start_time | timeformat }} — {{ r.end_time | timeformat }}</td>
-          <td style="color:var(--gold);font-weight:700;">{{ r.total_price | currency }}</td>
-          <td><span class="badge badge-{{ r.status }}">{{ r.status }}</span></td>
+          <td data-label="Ref"><code>{{ r.booking_reference }}</code></td>
+          <td data-label="Customer" style="font-size:.84rem;">{{ r.customer_name }}</td>
+          <td data-label="Equipment" style="font-size:.83rem;color:#c8c4d8;">{{ r.eq_name }}</td>
+          <td data-label="Category"><span class="badge badge-{{ r.category }}">{{ r.category }}</span></td>
+          <td data-label="Date" style="font-size:.82rem;color:#c8c4d8;">{{ r.event_date | dateformat }}</td>
+          <td data-label="Time" style="font-size:.76rem;color:#7a7690;white-space:nowrap;">{{ r.start_time | timeformat }} — {{ r.end_time | timeformat }}</td>
+          <td data-label="Total" style="font-family:'Sora',sans-serif;font-weight:700;color:#e8ba5a;">{{ r.total_price | currency }}</td>
+          <td data-label="Status"><span class="badge badge-{{ r.status }}"><span class="badge-dot"></span>{{ r.status }}</span></td>
         </tr>
         {% endfor %}
       </tbody>
       <tfoot>
-        <tr style="background:rgba(108,99,255,0.08);">
-          <td colspan="6" style="text-align:right;font-weight:700;color:var(--text-muted);">TOTAL</td>
-          <td style="color:var(--gold);font-weight:800;font-size:1rem;">{{ total_rev | currency }}</td>
+        <tr style="background:rgba(201,150,58,.04);">
+          <td colspan="6" style="text-align:right;font-size:.76rem;font-weight:700;color:#7a7690;padding:12px 16px;">TOTAL</td>
+          <td style="font-family:'Sora',sans-serif;color:#e8ba5a;font-weight:800;font-size:1rem;padding:12px 16px;">{{ total_rev | currency }}</td>
           <td></td>
         </tr>
       </tfoot>
     </table>
     {% else %}
-    <div class="empty-state">
-      <span class="empty-icon">📊</span>
-      <h3>No data for selected range</h3>
-      <p>Try a different date range or approve some bookings first.</p>
+    <div style="text-align:center;padding:64px 24px;">
+      <div style="font-size:3rem;margin-bottom:14px;opacity:.2;">📊</div>
+      <div style="font-size:1rem;font-weight:700;color:#c8c4d8;margin-bottom:6px;">No data for selected range</div>
+      <div style="font-size:.84rem;color:#7a7690;">Try a different date range or approve some bookings first.</div>
     </div>
     {% endif %}
   </div>
 </div>
+
 {% endblock %}
 
 {% block extra_scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 const bycat = {{ by_cat | tojson }};
-const catLabels = Object.keys(bycat).map(k => k.charAt(0).toUpperCase() + k.slice(1));
-const catVals = Object.values(bycat);
+const catLabels = Object.keys(bycat).map(k => k.charAt(0).toUpperCase()+k.slice(1));
+const catVals   = Object.values(bycat);
 if (catVals.length > 0) {
   new Chart(document.getElementById('catChart'), {
     type: 'doughnut',
     data: {
       labels: catLabels,
-      datasets: [{ data: catVals,
-        backgroundColor: ['rgba(59,130,246,0.7)','rgba(245,158,11,0.7)','rgba(168,85,247,0.7)'],
-        borderColor: ['#3b82f6','#f59e0b','#a855f7'], borderWidth: 2 }]
+      datasets: [{
+        data: catVals,
+        backgroundColor: ['rgba(56,189,248,.65)','rgba(245,158,11,.65)','rgba(168,85,247,.65)'],
+        borderColor: ['#38bdf8','#f59e0b','#a855f7'],
+        borderWidth: 2,
+        hoverOffset: 8
+      }]
     },
     options: {
       responsive: true,
+      cutout: '62%',
       plugins: {
-        legend: { labels: { color: '#e8e8f0', font: { size: 13 } } },
-        tooltip: { callbacks: { label: ctx => ' ₱' + ctx.parsed.toLocaleString('en-PH', {minimumFractionDigits:2}) } }
+        legend: { labels: { color:'#7a7690', font:{size:12} } },
+        tooltip: { callbacks: { label: ctx => ' ₱'+ctx.parsed.toLocaleString('en-PH',{minimumFractionDigits:2}) } }
       }
     }
   });

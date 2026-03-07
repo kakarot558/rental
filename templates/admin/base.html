@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}Admin{% endblock %} — SoundLight Admin</title>
+  <title>{% block title %}Admin{% endblock %} — SoundLight</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous">
@@ -15,95 +15,97 @@
 <body>
 <div class="admin-layout">
 
-  <!-- Sidebar Overlay (mobile) -->
-  <div class="sidebar-overlay" style="position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99;display:none;"></div>
+  <!-- Sidebar Overlay -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
   <!-- SIDEBAR -->
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-brand">
-      <h2><i class="fas fa-bolt"></i> SoundLight</h2>
-      <p>Admin Dashboard</p>
+      <div class="sidebar-brand-mark"><i class="fas fa-bolt"></i></div>
+      <div class="sidebar-brand-text">
+        <h2>SoundLight</h2>
+        <p>Admin Panel</p>
+      </div>
     </div>
+
     <nav class="sidebar-nav">
-      <div class="sidebar-section-label">Overview</div>
+      <span class="nav-section-label">Overview</span>
       <a href="{{ url_for('admin_dashboard') }}" class="{{ 'active' if request.endpoint=='admin_dashboard' }}">
-        <span class="nav-icon">📊</span> Dashboard
+        <span class="nav-icon-wrap"><i class="fas fa-chart-line"></i></span> Dashboard
       </a>
 
-      <div class="sidebar-section-label">Management</div>
+      <span class="nav-section-label">Management</span>
       <a href="{{ url_for('admin_bookings') }}" class="{{ 'active' if request.endpoint=='admin_bookings' }}">
-        <span class="nav-icon">📋</span> Bookings
+        <span class="nav-icon-wrap"><i class="fas fa-calendar-check"></i></span> Bookings
       </a>
       <a href="{{ url_for('admin_payments') }}" class="{{ 'active' if request.endpoint in ['admin_payments','verify_payment','booking_payments'] }}">
-        <span class="nav-icon">💳</span> Payments
-        {% set pp = namespace(c=0) %}
-        {% if admin_session %}
-        {%- set pp_count = '' -%}
-        {% endif %}
+        <span class="nav-icon-wrap"><i class="fas fa-wallet"></i></span> Payments
       </a>
       <a href="{{ url_for('admin_equipment') }}" class="{{ 'active' if request.endpoint in ['admin_equipment','add_equipment','edit_equipment'] }}">
-        <span class="nav-icon">📦</span> Equipment
+        <span class="nav-icon-wrap"><i class="fas fa-box-open"></i></span> Equipment
       </a>
       <a href="{{ url_for('admin_calendar') }}" class="{{ 'active' if request.endpoint=='admin_calendar' }}">
-        <span class="nav-icon">🗓️</span> Calendar
+        <span class="nav-icon-wrap"><i class="fas fa-calendar-alt"></i></span> Calendar
       </a>
 
-      <div class="sidebar-section-label">Analytics</div>
+      <span class="nav-section-label">Analytics</span>
       <a href="{{ url_for('admin_reports') }}" class="{{ 'active' if request.endpoint=='admin_reports' }}">
-        <span class="nav-icon">📈</span> Reports
+        <span class="nav-icon-wrap"><i class="fas fa-chart-bar"></i></span> Reports
       </a>
 
-      <div class="sidebar-section-label">Site</div>
+      <span class="nav-section-label">Site</span>
       <a href="{{ url_for('index') }}" target="_blank">
-        <span class="nav-icon">🌐</span> View Website
+        <span class="nav-icon-wrap"><i class="fas fa-external-link-alt"></i></span> View Website
       </a>
     </nav>
+
     <div class="sidebar-footer">
-      <div class="admin-info">
-        <div class="admin-avatar">{{ admin_session.username[0]|upper if admin_session else 'A' }}</div>
-        <div>
-          <div style="font-size:0.85rem;font-weight:600;">{{ admin_session.username if admin_session else 'Admin' }}</div>
-          <div style="font-size:0.75rem;color:var(--text-muted);">Administrator</div>
+      <div class="sidebar-user">
+        <div class="sidebar-avatar">{{ admin_session.username[0]|upper if admin_session else 'A' }}</div>
+        <div class="sidebar-user-info">
+          <div class="sidebar-user-name">{{ admin_session.username if admin_session else 'Admin' }}</div>
+          <div class="sidebar-user-role">Administrator</div>
         </div>
       </div>
-      <a href="{{ url_for('admin_logout') }}" class="btn btn-outline btn-sm" style="width:100%;justify-content:center;">
-        <i class="fas fa-sign-out-alt"></i> Logout
+      <a href="{{ url_for('admin_logout') }}" class="sidebar-logout">
+        <i class="fas fa-sign-out-alt"></i> Sign Out
       </a>
     </div>
   </aside>
 
-  <!-- MAIN CONTENT -->
+  <!-- MAIN -->
   <div class="admin-main">
     <header class="admin-topbar">
-      <div style="display:flex;align-items:center;gap:1rem;">
-        <button class="sidebar-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">
-          <i class="fas fa-bars"></i>
-        </button>
-        <div>
+      <div class="topbar-left">
+        <button class="topbar-menu-btn" id="topbarMenuBtn"><i class="fas fa-bars"></i></button>
+        <div class="topbar-page-info">
           <h1>{% block page_title %}Dashboard{% endblock %}</h1>
           <p>{% block page_subtitle %}{% endblock %}</p>
         </div>
       </div>
-      <div style="display:flex;align-items:center;gap:1rem;">
-        <span style="font-size:0.8rem;color:var(--text-muted);">
-          <i class="fas fa-clock"></i> <span id="liveClock"></span>
-        </span>
+      <div class="topbar-right">
+        <div class="topbar-clock"><i class="fas fa-clock"></i><span id="liveClock"></span></div>
+        <a href="{{ url_for('index') }}" target="_blank" class="topbar-view-site">
+          <i class="fas fa-globe"></i>
+        </a>
         <a href="{{ url_for('book') }}" target="_blank" class="btn btn-primary btn-sm">
           <i class="fas fa-plus"></i> New Booking
         </a>
       </div>
     </header>
 
-    <div class="alerts" style="padding:1rem 2rem 0;">
-      {% with messages = get_flashed_messages(with_categories=true) %}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+      <div style="padding:14px 22px 0;display:flex;flex-direction:column;gap:8px;">
         {% for cat, msg in messages %}
-          <div class="alert alert-{{ cat }}">
-            <i class="fas fa-{{ 'check-circle' if cat=='success' else 'exclamation-circle' if cat=='danger' else 'info-circle' }}"></i>
-            {{ msg }}
-          </div>
+        <div class="alert alert-{{ cat }}">
+          <i class="fas fa-{{ 'check-circle' if cat=='success' else 'exclamation-circle' if cat=='danger' else 'info-circle' }}"></i>
+          <span>{{ msg }}</span>
+        </div>
         {% endfor %}
-      {% endwith %}
-    </div>
+      </div>
+      {% endif %}
+    {% endwith %}
 
     <main class="admin-content">
       {% block content %}{% endblock %}
@@ -111,22 +113,30 @@
   </div>
 </div>
 
-<script src="{{ url_for('static', filename='js/main.js') }}"></script>
 <script>
-// Live clock
-function updateClock() {
-  const now = new Date();
-  document.getElementById('liveClock').textContent = now.toLocaleTimeString('en-PH');
-}
-updateClock(); setInterval(updateClock, 1000);
-// Sidebar overlay click
-document.querySelector('.sidebar-overlay').addEventListener('click', function() {
-  document.getElementById('sidebar').classList.remove('open');
-  this.style.display = 'none';
-});
-document.querySelector('.sidebar-toggle').addEventListener('click', function() {
-  const overlay = document.querySelector('.sidebar-overlay');
-  overlay.style.display = document.getElementById('sidebar').classList.contains('open') ? 'none' : 'block';
+(function(){
+  const el=document.getElementById('liveClock');
+  if(!el)return;
+  const t=()=>el.textContent=new Date().toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  t();setInterval(t,1000);
+})();
+(function(){
+  const btn=document.getElementById('topbarMenuBtn');
+  const sb=document.getElementById('sidebar');
+  const ov=document.getElementById('sidebarOverlay');
+  if(!btn||!sb)return;
+  const open=()=>{sb.classList.add('open');ov.classList.add('show');document.body.style.overflow='hidden';};
+  const close=()=>{sb.classList.remove('open');ov.classList.remove('show');document.body.style.overflow='';};
+  btn.addEventListener('click',()=>sb.classList.contains('open')?close():open());
+  ov.addEventListener('click',close);
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')close();});
+})();
+document.querySelectorAll('.alert').forEach((a,i)=>{
+  setTimeout(()=>{
+    a.style.transition='opacity .4s ease,transform .4s ease';
+    a.style.opacity='0';a.style.transform='translateX(10px)';
+    setTimeout(()=>a.remove(),400);
+  },5000+i*300);
 });
 </script>
 {% block extra_scripts %}{% endblock %}

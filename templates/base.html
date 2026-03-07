@@ -3,37 +3,121 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}Sound & Light Events{% endblock %} | Event Equipment Rental</title>
+  <meta name="description" content="SoundLight Events — Professional event equipment rentals in Lipa City, Batangas.">
+  <title>{% block title %}SoundLight Events{% endblock %} | Event Equipment Rental</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous">
   {% block extra_head %}{% endblock %}
 </head>
 <body>
+
+  <!-- Loading Screen -->
   <div class="loading-overlay" id="loadingOverlay">
     <div class="spinner"></div>
   </div>
 
-  <nav class="navbar">
-    <a href="{{ url_for('index') }}" class="navbar-brand">
-      <i class="fas fa-bolt"></i> SoundLight Events
-    </a>
-    <ul class="nav-links">
-      <li><a href="{{ url_for('index') }}" class="{{ 'active' if request.endpoint=='index' }}">Home</a></li>
-      <li><a href="{{ url_for('equipment_list') }}" class="{{ 'active' if request.endpoint=='equipment_list' }}">Equipment</a></li>
-      <li><a href="{{ url_for('track_booking') }}" class="{{ 'active' if request.endpoint=='track_booking' }}">Track Booking</a></li>
-      <li><a href="{{ url_for('book') }}" class="btn-nav">Book Now</a></li>
-    </ul>
+  <!-- ── NAVBAR ──────────────────────────────────────────────────── -->
+  <nav class="navbar" id="navbar">
+    <div class="navbar-inner">
+
+      <!-- Brand -->
+      <a href="{{ url_for('index') }}" class="navbar-brand">
+        <div class="brand-icon"><i class="fas fa-bolt"></i></div>
+        <div class="brand-text">
+          <span class="brand-name">SoundLight Events</span>
+          <span class="brand-sub">Equipment Rental</span>
+        </div>
+      </a>
+
+      <!-- Desktop Links -->
+      <ul class="nav-links">
+        <li>
+          <a href="{{ url_for('index') }}" class="{{ 'active' if request.endpoint=='index' }}">
+            <i class="fas fa-home"></i> Home
+          </a>
+        </li>
+        <li>
+          <a href="{{ url_for('equipment_list') }}" class="{{ 'active' if request.endpoint=='equipment_list' }}">
+            <i class="fas fa-box-open"></i> Equipment
+          </a>
+        </li>
+        <li>
+          <a href="{{ url_for('track_booking') }}" class="{{ 'active' if request.endpoint=='track_booking' }}">
+            <i class="fas fa-search"></i> Track Booking
+          </a>
+        </li>
+      </ul>
+
+      <!-- Right side -->
+      <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
+        <a href="{{ url_for('book') }}" class="btn-nav" style="display:none;" id="navBookDesktop">
+          <i class="fas fa-calendar-plus"></i> Book Now
+        </a>
+        <!-- Burger -->
+        <button class="nav-burger" id="navBurger" aria-label="Toggle menu" aria-expanded="false">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+      </div>
+
+    </div>
   </nav>
 
-  <div class="alerts">
+  <!-- Desktop Book Now (inside nav-links region, hidden on mobile) -->
+  <style>
+    @media(min-width:769px){
+      #navBookDesktop{display:flex!important;}
+      .nav-burger{display:none!important;}
+    }
+  </style>
+
+  <!-- Mobile Drawer -->
+  <div class="nav-drawer" id="navDrawer" aria-hidden="true">
+    <nav class="nav-drawer-links">
+      <a href="{{ url_for('index') }}" class="{{ 'active' if request.endpoint=='index' }}">
+        <i class="fas fa-home"></i> Home
+      </a>
+      <a href="{{ url_for('equipment_list') }}" class="{{ 'active' if request.endpoint=='equipment_list' }}">
+        <i class="fas fa-box-open"></i> Equipment
+      </a>
+      <a href="{{ url_for('track_booking') }}" class="{{ 'active' if request.endpoint=='track_booking' }}">
+        <i class="fas fa-search"></i> Track Booking
+      </a>
+      <div class="nav-drawer-divider"></div>
+      <a href="{{ url_for('equipment_list', category='sound') }}">
+        <i class="fas fa-music"></i> Sound Systems
+      </a>
+      <a href="{{ url_for('equipment_list', category='light') }}">
+        <i class="fas fa-lightbulb"></i> Lighting Systems
+      </a>
+      <a href="{{ url_for('equipment_list', category='videoke') }}">
+        <i class="fas fa-microphone"></i> Videoke Systems
+      </a>
+    </nav>
+    <a href="{{ url_for('book') }}" class="nav-drawer-cta">
+      <i class="fas fa-calendar-plus"></i> Book Now
+    </a>
+    <div class="nav-drawer-divider"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;">
+      <span style="font-size:.76rem;color:#78748f;">📞 +63 912 345 6789</span>
+      <span style="font-size:.76rem;color:#78748f;">📍 Lipa City</span>
+    </div>
+  </div>
+
+  <!-- Drawer Overlay -->
+  <div class="nav-overlay" id="navOverlay"></div>
+
+  <!-- Alerts -->
+  <div class="alerts" id="alertsContainer">
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% for cat, msg in messages %}
         <div class="alert alert-{{ cat }}">
           <i class="fas fa-{{ 'check-circle' if cat=='success' else 'exclamation-circle' if cat=='danger' else 'info-circle' }}"></i>
-          {{ msg }}
+          <span>{{ msg }}</span>
         </div>
       {% endfor %}
     {% endwith %}
@@ -41,18 +125,25 @@
 
   {% block content %}{% endblock %}
 
+  <!-- ── FOOTER ──────────────────────────────────────────────────── -->
   <footer>
     <div class="footer-grid">
       <div class="footer-brand">
         <h3><i class="fas fa-bolt"></i> SoundLight Events</h3>
-        <p>Professional event equipment rentals for every occasion — from intimate gatherings to large-scale concerts.</p>
+        <p>Professional event equipment rentals for every occasion — from intimate gatherings to large-scale concerts in Lipa City and beyond.</p>
+        <div style="display:flex;gap:10px;margin-top:18px;">
+          <a href="#" style="width:34px;height:34px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:9px;display:flex;align-items:center;justify-content:center;color:#78748f;font-size:.85rem;transition:all .24s ease;" onmouseover="this.style.borderColor='rgba(201,150,58,.3)';this.style.color='#c9963a'" onmouseout="this.style.borderColor='rgba(255,255,255,.08)';this.style.color='#78748f'"><i class="fab fa-facebook-f"></i></a>
+          <a href="#" style="width:34px;height:34px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:9px;display:flex;align-items:center;justify-content:center;color:#78748f;font-size:.85rem;transition:all .24s ease;" onmouseover="this.style.borderColor='rgba(201,150,58,.3)';this.style.color='#c9963a'" onmouseout="this.style.borderColor='rgba(255,255,255,.08)';this.style.color='#78748f'"><i class="fab fa-instagram"></i></a>
+          <a href="#" style="width:34px;height:34px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:9px;display:flex;align-items:center;justify-content:center;color:#78748f;font-size:.85rem;transition:all .24s ease;" onmouseover="this.style.borderColor='rgba(201,150,58,.3)';this.style.color='#c9963a'" onmouseout="this.style.borderColor='rgba(255,255,255,.08)';this.style.color='#78748f'"><i class="fab fa-tiktok"></i></a>
+        </div>
       </div>
       <div>
         <h4>Quick Links</h4>
         <ul class="footer-links">
-          <li><a href="{{ url_for('index') }}">Home</a></li>
-          <li><a href="{{ url_for('equipment_list') }}">Equipment</a></li>
-          <li><a href="{{ url_for('book') }}">Book Now</a></li>
+          <li><a href="{{ url_for('index') }}"><i class="fas fa-chevron-right" style="font-size:.6rem;opacity:.5;"></i> Home</a></li>
+          <li><a href="{{ url_for('equipment_list') }}"><i class="fas fa-chevron-right" style="font-size:.6rem;opacity:.5;"></i> Equipment</a></li>
+          <li><a href="{{ url_for('book') }}"><i class="fas fa-chevron-right" style="font-size:.6rem;opacity:.5;"></i> Book Now</a></li>
+          <li><a href="{{ url_for('track_booking') }}"><i class="fas fa-chevron-right" style="font-size:.6rem;opacity:.5;"></i> Track Booking</a></li>
         </ul>
       </div>
       <div>
@@ -64,16 +155,22 @@
         </ul>
       </div>
       <div>
-        <h4>Contact</h4>
+        <h4>Contact Us</h4>
         <ul class="footer-links">
-          <li><a href="#">📞 +63 912 345 6789</a></li>
-          <li><a href="#">📧 info@soundlight.ph</a></li>
+          <li><a href="tel:+639123456789">📞 +63 912 345 6789</a></li>
+          <li><a href="mailto:info@soundlight.ph">📧 info@soundlight.ph</a></li>
           <li><a href="#">📍 Lipa City, Batangas</a></li>
+          <li><a href="#">🕐 Mon–Sat, 8AM–7PM</a></li>
         </ul>
       </div>
     </div>
     <div class="footer-bottom">
-      <p>&copy; 2025 SoundLight Events. All rights reserved. | Built with ❤️ for your events.</p>
+      <p>&copy; 2025 SoundLight Events. All rights reserved.</p>
+      <div class="footer-bottom-links">
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms of Service</a>
+        <a href="{{ url_for('admin_login') }}">Admin</a>
+      </div>
     </div>
   </footer>
 

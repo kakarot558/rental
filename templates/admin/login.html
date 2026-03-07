@@ -6,68 +6,511 @@
   <title>Admin Login — SoundLight Events</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous">
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink:       #0e0d0b;
+      --ink-soft:  #141210;
+      --ink-mid:   #1c1a16;
+      --gold:      #c9a84c;
+      --gold-lt:   #ddbf6e;
+      --cream:     #f2ece0;
+      --cream-dim: rgba(242,236,224,0.55);
+      --muted:     rgba(242,236,224,0.30);
+      --border:    rgba(242,236,224,0.07);
+      --border-md: rgba(242,236,224,0.11);
+      --error:     #d97b6c;
+      --r:         12px;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--ink);
+      color: var(--cream);
+      font-family: 'Outfit', sans-serif;
+      overflow: hidden;
+    }
+
+    /* grain */
+    body::after {
+      content: '';
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+      opacity: 0.028;
+    }
+
+    /* ─── LAYOUT ─── */
+    .shell {
+      position: relative; z-index: 1;
+      display: grid;
+      grid-template-columns: 54% 46%;
+      height: 100vh;
+    }
+
+    /* ═══════════ LEFT ═══════════ */
+    .left {
+      position: relative; overflow: hidden;
+      background: var(--ink-soft);
+      display: flex; flex-direction: column;
+      justify-content: space-between;
+      padding: 48px 56px;
+    }
+
+    /* warm glow top-right */
+    .left::before {
+      content: '';
+      position: absolute;
+      width: 800px; height: 800px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(201,168,76,0.065) 0%, transparent 60%);
+      top: -300px; right: -250px; pointer-events: none;
+    }
+    /* golden right edge line */
+    .left::after {
+      content: '';
+      position: absolute; right: 0; top: 0;
+      width: 1px; height: 100%;
+      background: linear-gradient(to bottom,
+        transparent 0%,
+        rgba(201,168,76,0.18) 30%,
+        rgba(201,168,76,0.40) 50%,
+        rgba(201,168,76,0.18) 70%,
+        transparent 100%);
+    }
+
+    /* ── Wordmark ── */
+    .wordmark {
+      position: relative; z-index: 2;
+      display: flex; align-items: center; gap: 15px;
+    }
+    .wm-icon {
+      width: 44px; height: 44px;
+      background: var(--gold);
+      border-radius: 11px;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 0 0 1px rgba(201,168,76,0.3), 0 4px 20px rgba(201,168,76,0.28);
+    }
+    .wm-icon i { color: var(--ink); font-size: 1.05rem; }
+    .wm-label { display: flex; flex-direction: column; gap: 2px; }
+    .wm-name {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.15rem; font-weight: 600;
+      letter-spacing: 0.05em;
+      color: var(--cream); line-height: 1;
+    }
+    .wm-sub {
+      font-size: 0.6rem; font-weight: 500;
+      letter-spacing: 0.22em; text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    /* ── Hero copy ── */
+    .hero { position: relative; z-index: 2; }
+
+    .hero-kicker {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 20px;
+    }
+    .hero-kicker-line { width: 22px; height: 1px; background: var(--gold); opacity: 0.7; }
+    .hero-kicker span {
+      font-size: 0.62rem; font-weight: 600;
+      letter-spacing: 0.26em; text-transform: uppercase;
+      color: var(--gold);
+    }
+
+    .hero-heading {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(3rem, 4.4vw, 4.8rem);
+      font-weight: 600; line-height: 0.96;
+      letter-spacing: -0.01em;
+      color: var(--cream);
+    }
+    .hero-heading em { font-style: italic; color: var(--gold-lt); }
+
+    .hero-body {
+      margin-top: 18px;
+      font-size: 0.8rem; font-weight: 300; line-height: 1.75;
+      color: var(--muted); max-width: 360px;
+    }
+
+    /* ── Service chips ── */
+    .services { position: relative; z-index: 2; }
+    .svc-label {
+      font-size: 0.6rem; font-weight: 600;
+      letter-spacing: 0.22em; text-transform: uppercase;
+      color: rgba(201,168,76,0.38);
+      margin-bottom: 11px;
+    }
+    .chips { display: flex; gap: 8px; flex-wrap: wrap; }
+    .chip {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 7px 13px;
+      border-radius: 6px;
+      border: 1px solid var(--border-md);
+      background: rgba(255,255,255,0.025);
+      font-size: 0.69rem; font-weight: 500;
+      color: var(--cream-dim);
+      backdrop-filter: blur(6px);
+      transition: border-color 0.25s, color 0.25s;
+    }
+    .chip:hover { border-color: rgba(201,168,76,0.32); color: var(--cream); }
+    .chip i { font-size: 0.62rem; color: var(--gold); opacity: 0.65; }
+
+    /* ═══════════ RIGHT ═══════════ */
+    .right {
+      position: relative; overflow: hidden;
+      background: var(--ink);
+      display: flex; align-items: center; justify-content: center;
+      padding: 48px 56px 48px 72px;
+    }
+
+    /* ambient glow bottom */
+    .right::before {
+      content: '';
+      position: absolute;
+      bottom: -120px; left: 50%; transform: translateX(-50%);
+      width: 460px; height: 320px;
+      background: radial-gradient(ellipse, rgba(201,168,76,0.04) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    /* ── Card ── */
+    .card {
+      position: relative; z-index: 2;
+      width: 100%; max-width: 370px;
+    }
+
+    /* stagger in */
+    .card > * {
+      animation: rise 0.5s cubic-bezier(0.16,1,0.3,1) both;
+    }
+    .card > *:nth-child(1) { animation-delay: 0.06s; }
+    .card > *:nth-child(2) { animation-delay: 0.13s; }
+    .card > *:nth-child(3) { animation-delay: 0.18s; }
+    .card > *:nth-child(4) { animation-delay: 0.23s; }
+    .card > *:nth-child(5) { animation-delay: 0.28s; }
+    .card > *:nth-child(6) { animation-delay: 0.33s; }
+    .card > *:nth-child(7) { animation-delay: 0.38s; }
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* status pill */
+    .status-pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 5px 12px 5px 10px;
+      border-radius: 99px;
+      border: 1px solid rgba(201,168,76,0.18);
+      background: rgba(201,168,76,0.05);
+      margin-bottom: 24px;
+    }
+    .pill-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--gold);
+      box-shadow: 0 0 7px rgba(201,168,76,0.9);
+      animation: pulse-dot 2.2s ease-in-out infinite;
+    }
+    @keyframes pulse-dot {
+      0%,100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+    .status-pill span {
+      font-size: 0.66rem; font-weight: 600;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: rgba(201,168,76,0.75);
+    }
+
+    .card-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2.55rem; font-weight: 600;
+      line-height: 1.05; letter-spacing: -0.01em;
+      color: var(--cream);
+    }
+    .card-sub {
+      margin-top: 6px;
+      font-size: 0.8rem; font-weight: 300;
+      color: var(--muted); line-height: 1.5;
+    }
+
+    .divider {
+      height: 1px; margin: 26px 0;
+      background: linear-gradient(to right, var(--border-md) 0%, transparent 75%);
+    }
+
+    /* ── Error ── */
+    .error-box {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 12px 15px;
+      border-radius: var(--r);
+      background: rgba(217,123,108,0.07);
+      border: 1px solid rgba(217,123,108,0.2);
+      margin-bottom: 20px;
+      font-size: 0.79rem; line-height: 1.5;
+      color: #e8a89c;
+    }
+    .error-box i { flex-shrink: 0; margin-top: 2px; font-size: 0.75rem; }
+
+    /* ── Form ── */
+    .form-group { margin-bottom: 15px; }
+
+    label {
+      display: block;
+      font-size: 0.65rem; font-weight: 600;
+      letter-spacing: 0.16em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 8px;
+    }
+
+    .input-wrap { position: relative; }
+
+    .input-icon {
+      position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+      font-size: 0.72rem;
+      color: rgba(242,236,224,0.18);
+      pointer-events: none;
+      transition: color 0.2s;
+    }
+    .input-wrap:focus-within .input-icon { color: var(--gold); }
+
+    input[type="text"],
+    input[type="password"] {
+      width: 100%;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border-md);
+      border-radius: var(--r);
+      padding: 13px 14px 13px 40px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.84rem; font-weight: 400;
+      color: var(--cream);
+      outline: none;
+      transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+      -webkit-appearance: none;
+    }
+    input::placeholder { color: rgba(242,236,224,0.16); }
+    input:focus {
+      border-color: rgba(201,168,76,0.42);
+      background: rgba(201,168,76,0.035);
+      box-shadow: 0 0 0 3px rgba(201,168,76,0.07);
+    }
+
+    /* ── Submit ── */
+    .btn-submit {
+      width: 100%; margin-top: 20px;
+      display: flex; align-items: center; justify-content: center; gap: 9px;
+      padding: 14px 18px;
+      border: none; border-radius: var(--r);
+      cursor: pointer;
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.83rem; font-weight: 600;
+      letter-spacing: 0.05em;
+      background: linear-gradient(105deg, #b8952e 0%, #d9b55a 45%, #c9a84c 100%);
+      color: var(--ink);
+      position: relative; overflow: hidden;
+      box-shadow: 0 1px 0 rgba(255,255,255,0.12) inset, 0 4px 20px rgba(201,168,76,0.18);
+      transition: box-shadow 0.25s, transform 0.14s, filter 0.2s;
+    }
+    .btn-submit::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(120deg, transparent 25%, rgba(255,255,255,0.2) 50%, transparent 75%);
+      transform: translateX(-120%);
+      transition: transform 0.55s ease;
+    }
+    .btn-submit:hover {
+      filter: brightness(1.06);
+      box-shadow: 0 1px 0 rgba(255,255,255,0.15) inset, 0 6px 28px rgba(201,168,76,0.3);
+      transform: translateY(-1px);
+    }
+    .btn-submit:hover::after { transform: translateX(120%); }
+    .btn-submit:active { transform: translateY(0); filter: brightness(0.97); }
+    .btn-submit i { font-size: 0.76rem; }
+
+    /* ── Hint ── */
+    .hint {
+      display: flex; align-items: center; gap: 10px;
+      margin-top: 16px;
+      padding: 11px 14px;
+      border-radius: var(--r);
+      background: rgba(201,168,76,0.03);
+      border: 1px dashed rgba(201,168,76,0.14);
+      font-size: 0.72rem; line-height: 1.5;
+      color: rgba(201,168,76,0.4);
+    }
+    .hint i { flex-shrink: 0; font-size: 0.66rem; }
+    .hint code {
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: rgba(201,168,76,0.1);
+      color: rgba(201,168,76,0.75);
+      font-size: 0.7rem; font-weight: 500;
+    }
+
+    /* ── Back link ── */
+    .back-link {
+      display: inline-flex; align-items: center; gap: 8px;
+      margin-top: 26px;
+      font-size: 0.73rem; font-weight: 500;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .back-link i { font-size: 0.62rem; transition: transform 0.2s; }
+    .back-link:hover { color: var(--cream); }
+    .back-link:hover i { transform: translateX(-3px); }
+
+    /* ─── Loading overlay ─── */
+    .loading-overlay {
+      position: fixed; inset: 0; z-index: 9999;
+      background: var(--ink);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 20px;
+      animation: fadeout 0.35s 0.65s forwards;
+    }
+    @keyframes fadeout { to { opacity: 0; pointer-events: none; } }
+
+    .loader-emblem {
+      width: 48px; height: 48px;
+      background: var(--gold);
+      border-radius: 13px;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 0 0 8px rgba(201,168,76,0.06), 0 0 24px rgba(201,168,76,0.3);
+      animation: emblem 0.7s ease-in-out infinite alternate;
+    }
+    .loader-emblem i { color: var(--ink); font-size: 1.1rem; }
+    @keyframes emblem {
+      from { transform: scale(0.93); box-shadow: 0 0 0 4px rgba(201,168,76,0.06), 0 0 14px rgba(201,168,76,0.2); }
+      to   { transform: scale(1.05); box-shadow: 0 0 0 12px rgba(201,168,76,0.04), 0 0 32px rgba(201,168,76,0.4); }
+    }
+    .loader-track {
+      width: 72px; height: 2px;
+      background: rgba(201,168,76,0.1); border-radius: 2px; overflow: hidden;
+    }
+    .loader-track::after {
+      content: ''; display: block;
+      width: 36%; height: 100%;
+      background: linear-gradient(to right, transparent, var(--gold), transparent);
+      animation: track 1s ease-in-out infinite;
+    }
+    @keyframes track { 0% { transform: translateX(-200%); } 100% { transform: translateX(500%); } }
+
+    /* ─── Responsive ─── */
+    @media (max-width: 860px) {
+      html, body { overflow: auto; }
+      .shell { grid-template-columns: 1fr; height: auto; min-height: 100vh; }
+      .left { display: none; }
+      .right { padding: 72px 30px; min-height: 100vh; }
+    }
+  </style>
 </head>
 <body>
-  <div class="loading-overlay" id="loadingOverlay"><div class="spinner"></div></div>
 
-  <div class="login-wrap">
-    <!-- Left visual panel -->
-    <div class="login-logo">
-      <i class="fas fa-bolt"></i>
-      <h1>SoundLight<br>Events</h1>
-      <p>Professional Event Equipment Rental</p>
+  <div class="loading-overlay">
+    <div class="loader-emblem"><i class="fas fa-bolt"></i></div>
+    <div class="loader-track"></div>
+  </div>
+
+  <div class="shell">
+
+    <!-- ═══ LEFT ═══ -->
+    <div class="left">
+
+      <div class="wordmark">
+        <div class="wm-icon"><i class="fas fa-bolt"></i></div>
+        <div class="wm-label">
+          <span class="wm-name">SoundLight Events</span>
+          <span class="wm-sub">Management System</span>
+        </div>
+      </div>
+
+      <div class="hero">
+        <div class="hero-kicker">
+          <div class="hero-kicker-line"></div>
+          <span>Professional Equipment Rental</span>
+        </div>
+        <h1 class="hero-heading">Premium<br>Event <em>Tech</em><br>Solutions</h1>
+        <p class="hero-body">
+          Powering unforgettable events with industry-grade sound, lighting, and AV production. Trusted by professionals.
+        </p>
+      </div>
+
+      <div class="services">
+        <p class="svc-label">Our Services</p>
+        <div class="chips">
+          <span class="chip"><i class="fas fa-microphone-alt"></i> Sound Systems</span>
+          <span class="chip"><i class="fas fa-lightbulb"></i> Stage Lighting</span>
+          <span class="chip"><i class="fas fa-video"></i> AV Production</span>
+          <span class="chip"><i class="fas fa-calendar-check"></i> Event Tech</span>
+        </div>
+      </div>
+
     </div>
 
-    <!-- Right form panel -->
-    <div class="login-card">
-      <div class="login-header">
-        <div class="login-logo-icon">⚡</div>
-        <h2>Welcome Back</h2>
-        <p>Sign in to your admin dashboard</p>
+    <!-- ═══ RIGHT ═══ -->
+    <div class="right">
+      <div class="card">
 
-        {% if error %}
-        <div class="error-box">
-          <i class="fas fa-exclamation-circle"></i> {{ error }}
+        <div class="status-pill">
+          <div class="pill-dot"></div>
+          <span>Secure Admin Portal</span>
         </div>
-        {% endif %}
+
+        <h2 class="card-title">Welcome Back</h2>
+        <p class="card-sub">Sign in to access the management dashboard</p>
+
+        <div class="divider"></div>
+
+        <!-- {% if error %}
+        <div class="error-box">
+          <i class="fas fa-exclamation-circle"></i>
+          <span>{{ error }}</span>
+        </div>
+        {% endif %} -->
 
         <form method="POST" action="{{ url_for('admin_login') }}">
+
           <div class="form-group">
             <label for="username">Username</label>
             <div class="input-wrap">
               <i class="fas fa-user input-icon"></i>
-              <input type="text" id="username" name="username" placeholder="Enter username" required autofocus>
+              <input type="text" id="username" name="username"
+                     placeholder="Enter your username"
+                     required autofocus autocomplete="username">
             </div>
           </div>
+
           <div class="form-group">
             <label for="password">Password</label>
             <div class="input-wrap">
               <i class="fas fa-lock input-icon"></i>
-              <input type="password" id="password" name="password" placeholder="••••••••" required>
+              <input type="password" id="password" name="password"
+                     placeholder="••••••••••••"
+                     required autocomplete="current-password">
             </div>
           </div>
-          <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:13px;font-size:.96rem;border-radius:14px;margin-top:6px;">
-            <i class="fas fa-sign-in-alt"></i> Sign In
+
+          <button type="submit" class="btn-submit">
+            <i class="fas fa-arrow-right-to-bracket"></i>
+            Sign In to Dashboard
           </button>
+
         </form>
 
         <div class="hint">
-          <i class="fas fa-key"></i> Default: <strong>admin</strong> / <strong>Admin@1234</strong>
+          <i class="fas fa-key"></i>
+          <span>Default credentials &mdash; <code>admin</code> / <code>Admin@1234</code></span>
         </div>
 
-        <div style="text-align:center;margin-top:16px;">
-          <a href="{{ url_for('index') }}" style="font-size:0.8rem;color:#78748f;text-decoration:none;transition:color .2s;">
-            <i class="fas fa-arrow-left"></i> Back to Website
-          </a>
-        </div>
+        <a href="{{ url_for('index') }}" class="back-link">
+          <i class="fas fa-arrow-left"></i>
+          Return to Website
+        </a>
+
       </div>
     </div>
-  </div>
 
-  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  </div>
 </body>
 </html>

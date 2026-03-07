@@ -4,24 +4,25 @@
 {% block page_subtitle %}Manage all customer booking requests{% endblock %}
 
 {% block content %}
-<!-- Filters -->
+
+<!-- Filter Bar -->
 <div class="filter-bar">
-  <form method="GET" style="display:flex;gap:1rem;flex-wrap:wrap;width:100%;align-items:flex-end;">
+  <form method="GET">
     <div class="form-group" style="flex:2;min-width:180px;">
       <label>Search</label>
-      <input type="text" name="search" value="{{ search }}" placeholder="Name, email, reference...">
+      <input type="text" name="search" value="{{ search }}" placeholder="Name, email, reference…">
     </div>
-    <div class="form-group" style="flex:1;min-width:140px;">
+    <div class="form-group">
       <label>Booking Status</label>
       <select name="status">
         <option value="">All Status</option>
-        <option value="pending"  {{ 'selected' if status_filter=='pending' }}>Pending</option>
-        <option value="approved" {{ 'selected' if status_filter=='approved' }}>Approved</option>
-        <option value="completed"{{ 'selected' if status_filter=='completed' }}>Completed</option>
-        <option value="rejected" {{ 'selected' if status_filter=='rejected' }}>Rejected</option>
+        <option value="pending"   {{ 'selected' if status_filter=='pending' }}>Pending</option>
+        <option value="approved"  {{ 'selected' if status_filter=='approved' }}>Approved</option>
+        <option value="completed" {{ 'selected' if status_filter=='completed' }}>Completed</option>
+        <option value="rejected"  {{ 'selected' if status_filter=='rejected' }}>Rejected</option>
       </select>
     </div>
-    <div class="form-group" style="flex:1;min-width:140px;">
+    <div class="form-group">
       <label>Payment Status</label>
       <select name="payment_status">
         <option value="">All Payments</option>
@@ -31,35 +32,39 @@
         <option value="full"    {{ 'selected' if payment_filter=='full' }}>Fully Paid</option>
       </select>
     </div>
-    <div class="form-group" style="flex:1;min-width:140px;">
+    <div class="form-group">
       <label>From Date</label>
       <input type="date" name="date_from" value="{{ date_from }}">
     </div>
-    <div class="form-group" style="flex:1;min-width:140px;">
+    <div class="form-group">
       <label>To Date</label>
       <input type="date" name="date_to" value="{{ date_to }}">
     </div>
-    <div style="display:flex;gap:0.5rem;align-items:flex-end;">
+    <div class="filter-actions">
       <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-filter"></i> Filter</button>
-      <a href="{{ url_for('admin_bookings') }}" class="btn btn-outline btn-sm">Clear</a>
+      <a href="{{ url_for('admin_bookings') }}" class="btn btn-ghost btn-sm">Clear</a>
     </div>
   </form>
 </div>
 
-<div class="table-card">
-  <div class="table-card-header">
-    <h3><i class="fas fa-list" style="color:var(--primary);margin-right:0.5rem;"></i> Bookings ({{ bookings|length }})</h3>
+<!-- Table -->
+<div class="admin-card">
+  <div class="admin-card-header">
+    <h3><i class="fas fa-calendar-check"></i> Bookings</h3>
+    <div class="admin-card-header-right">
+      <span class="count-pill">{{ bookings|length }} results</span>
+    </div>
   </div>
   <div class="table-wrap">
     {% if bookings %}
-    <table>
+    <table class="admin-table">
       <thead>
         <tr>
           <th>Reference</th>
           <th>Customer</th>
           <th>Equipment</th>
           <th>Event Date & Time</th>
-          <th>Total</th>
+          <th>Amount</th>
           <th>Status</th>
           <th>Payment</th>
           <th>Actions</th>
@@ -68,66 +73,56 @@
       <tbody>
         {% for b in bookings %}
         <tr>
-          <td><code style="color:var(--primary);font-size:0.78rem;">{{ b.booking_reference }}</code></td>
-          <td>
-            <div style="font-weight:600;">{{ b.customer_name }}</div>
-            <div style="font-size:0.75rem;color:var(--text-muted);">{{ b.email }}</div>
-            <div style="font-size:0.75rem;color:var(--text-muted);">{{ b.contact_number }}</div>
+          <td data-label="Ref"><code>{{ b.booking_reference }}</code></td>
+          <td data-label="Customer">
+            <div style="font-weight:600;color:#edeae0;font-size:.85rem;">{{ b.customer_name }}</div>
+            <div style="font-size:.72rem;color:#7a7690;">{{ b.email }}</div>
+            <div style="font-size:.72rem;color:#7a7690;">{{ b.contact_number }}</div>
           </td>
-          <td>{{ b.eq_name }}</td>
-          <td>
-            <div>{{ b.event_date | dateformat }}</div>
-            <div style="font-size:0.75rem;color:var(--text-muted);">{{ b.start_time | timeformat }} — {{ b.end_time | timeformat }}</div>
+          <td data-label="Equipment" style="font-size:.83rem;color:#c8c4d8;">{{ b.eq_name }}</td>
+          <td data-label="Date">
+            <div style="font-size:.83rem;color:#c8c4d8;">{{ b.event_date | dateformat }}</div>
+            <div style="font-size:.71rem;color:#7a7690;">{{ b.start_time | timeformat }} — {{ b.end_time | timeformat }}</div>
           </td>
-          <td style="color:var(--gold);font-weight:700;">
-            {{ b.total_price | currency }}
-            <div style="font-size:0.72rem;color:#4ade80;">paid: {{ b.amount_paid | currency }}</div>
+          <td data-label="Amount">
+            <div style="font-family:'Sora',sans-serif;font-weight:700;color:#e8ba5a;">{{ b.total_price | currency }}</div>
+            <div style="font-size:.7rem;color:#4ade80;">paid {{ b.amount_paid | currency }}</div>
           </td>
-          <td><span class="badge badge-{{ b.status }}">{{ b.status }}</span></td>
-          <td>
-            <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-start;">
+          <td data-label="Status"><span class="badge badge-{{ b.status }}"><span class="badge-dot"></span>{{ b.status }}</span></td>
+          <td data-label="Payment">
+            <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-start;">
               <span class="badge badge-pay-{{ b.payment_status }}">
-                {{ {'unpaid':'Unpaid','half':'50%','partial':'Partial','full':'Full'}.get(b.payment_status, b.payment_status) }}
+                {{ {'unpaid':'Unpaid','half':'50% Paid','partial':'Partial','full':'Fully Paid'}.get(b.payment_status, b.payment_status) }}
               </span>
               <a href="{{ url_for('payment_page', ref=b.booking_reference) }}" target="_blank"
-                 style="font-size:0.68rem;color:#c9963a;">
+                 style="font-size:.68rem;color:#c9963a;display:flex;align-items:center;gap:4px;">
                 <i class="fas fa-link"></i> Pay link
               </a>
             </div>
           </td>
-          <td>
+          <td data-label="Actions">
             <div class="action-group">
               {% if b.status == 'pending' %}
               <form method="POST" action="{{ url_for('booking_action', bid=b.id) }}" style="display:inline;">
                 <input type="hidden" name="action" value="approve">
-                <button type="submit" class="btn btn-success btn-sm" title="Approve">
-                  <i class="fas fa-check"></i>
-                </button>
+                <button type="submit" class="btn btn-success btn-sm btn-icon" title="Approve"><i class="fas fa-check"></i></button>
               </form>
               <form method="POST" action="{{ url_for('booking_action', bid=b.id) }}" style="display:inline;">
                 <input type="hidden" name="action" value="reject">
-                <button type="submit" class="btn btn-danger btn-sm" title="Reject">
-                  <i class="fas fa-times"></i>
-                </button>
+                <button type="submit" class="btn btn-danger btn-sm btn-icon" title="Reject"><i class="fas fa-times"></i></button>
               </form>
               {% endif %}
               {% if b.status == 'approved' %}
               <form method="POST" action="{{ url_for('booking_action', bid=b.id) }}" style="display:inline;">
                 <input type="hidden" name="action" value="complete">
-                <button type="submit" class="btn btn-info btn-sm" title="Mark Complete">
-                  <i class="fas fa-flag-checkered"></i>
-                </button>
+                <button type="submit" class="btn btn-info btn-sm btn-icon" title="Mark Complete"><i class="fas fa-flag-checkered"></i></button>
               </form>
               {% endif %}
-              <a href="{{ url_for('booking_payments', bid=b.id) }}" class="btn btn-outline btn-sm" title="View Payments">
-                <i class="fas fa-wallet"></i>
-              </a>
+              <a href="{{ url_for('booking_payments', bid=b.id) }}" class="btn btn-ghost btn-sm btn-icon" title="View Payments"><i class="fas fa-wallet"></i></a>
               <form method="POST" action="{{ url_for('booking_action', bid=b.id) }}" style="display:inline;"
                 onsubmit="return confirm('Delete this booking? This cannot be undone.')">
                 <input type="hidden" name="action" value="delete">
-                <button type="submit" class="btn btn-outline btn-sm" title="Delete">
-                  <i class="fas fa-trash"></i>
-                </button>
+                <button type="submit" class="btn btn-danger btn-sm btn-icon" title="Delete"><i class="fas fa-trash"></i></button>
               </form>
             </div>
           </td>
@@ -136,12 +131,13 @@
       </tbody>
     </table>
     {% else %}
-    <div class="empty-state">
-      <span class="empty-icon">📭</span>
-      <h3>No bookings found</h3>
-      <p>Try adjusting your filters or wait for new bookings.</p>
+    <div style="text-align:center;padding:64px 24px;">
+      <div style="font-size:3rem;margin-bottom:14px;opacity:.2;">📭</div>
+      <div style="font-size:1rem;font-weight:700;color:#c8c4d8;margin-bottom:6px;">No bookings found</div>
+      <div style="font-size:.84rem;color:#7a7690;">Try adjusting your filters or wait for new bookings.</div>
     </div>
     {% endif %}
   </div>
 </div>
+
 {% endblock %}
