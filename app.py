@@ -87,7 +87,7 @@ def init_db():
             name TEXT NOT NULL,
             category TEXT NOT NULL,
             description TEXT,
-            price_per_hour REAL NOT NULL DEFAULT 0,
+            price_per_rent REAL NOT NULL DEFAULT 0,
             image_path TEXT DEFAULT 'default.jpg',
             status TEXT NOT NULL DEFAULT 'available',
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -152,7 +152,7 @@ def init_db():
             ('Dual Videoke Setup',       'videoke', 'Two screens, 100,000+ songs library, colored lighting built-in. For large parties.',                     900,  'videoke2.jpg'),
         ]
         for row in sample:
-            db.execute("INSERT INTO equipment (name,category,description,price_per_hour,image_path) VALUES (?,?,?,?,?)", row)
+            db.execute("INSERT INTO equipment (name,category,description,price_per_rent,image_path) VALUES (?,?,?,?,?)", row)
 
     # Auto-migration: safely add new columns to existing databases
     migrations = [
@@ -237,17 +237,11 @@ def check_overlap(equipment_id, event_date, start_time, end_time, exclude_id=Non
         args.append(exclude_id)
     return query_db(q, args, one=True)
 
-def calc_price(equipment_id, start_time, end_time):
-    eq = query_db("SELECT price_per_hour FROM equipment WHERE id=?", [equipment_id], one=True)
+def calc_price(equipment_id, start_time=None, end_time=None):
+    eq = query_db("SELECT price_per_rent FROM equipment WHERE id=?", [equipment_id], one=True)
     if not eq:
         return 0
-    try:
-        s     = datetime.strptime(start_time, "%H:%M")
-        e     = datetime.strptime(end_time,   "%H:%M")
-        hours = max((e - s).seconds / 3600, 1)
-        return round(eq['price_per_hour'] * hours, 2)
-    except Exception:
-        return 0
+    return round(eq['price_per_rent'], 2)
 
 def recalc_payment_status(booking_id):
     booking = query_db("SELECT total_price FROM bookings WHERE id=?", [booking_id], one=True)
@@ -712,7 +706,7 @@ def add_equipment():
         name        = request.form.get('name',          '').strip()
         category    = request.form.get('category',      '').strip()
         description = request.form.get('description',   '').strip()
-        price       = request.form.get('price_per_hour','').strip()
+        price       = request.form.get('price_per_rent','').strip()
         status      = request.form.get('status', 'available')
         if not name: errors['name'] = 'Name required.'
         if category not in ('sound','light','videoke'): errors['category'] = 'Invalid category.'
@@ -728,7 +722,7 @@ def add_equipment():
                 image_path = fname
         if not errors:
             query_db("""INSERT INTO equipment
-                (name,category,description,price_per_hour,image_path,status)
+                (name,category,description,price_per_rent,image_path,status)
                 VALUES (?,?,?,?,?,?)""",
                 [name, category, description, price_val, image_path, status], commit=True)
             flash('Equipment added!', 'success')
@@ -748,7 +742,7 @@ def edit_equipment(eid):
         name        = request.form.get('name',          '').strip()
         category    = request.form.get('category',      '').strip()
         description = request.form.get('description',   '').strip()
-        price       = request.form.get('price_per_hour','').strip()
+        price       = request.form.get('price_per_rent','').strip()
         status      = request.form.get('status', 'available')
         if not name: errors['name'] = 'Name required.'
         if category not in ('sound','light','videoke'): errors['category'] = 'Invalid category.'
@@ -764,7 +758,7 @@ def edit_equipment(eid):
                 image_path = fname
         if not errors:
             query_db("""UPDATE equipment
-                SET name=?,category=?,description=?,price_per_hour=?,image_path=?,status=?
+                SET name=?,category=?,description=?,price_per_rent=?,image_path=?,status=?
                 WHERE id=?""",
                 [name, category, description, price_val, image_path, status, eid], commit=True)
             flash('Equipment updated.', 'success')
@@ -853,7 +847,20 @@ def server_error(e):
 #  ENTRY POINT
 # ══════════════════════════════════════════════════════════════════
 
+
+# ── DB MIGRATION ──────────────────────────────────────────────────
+def migrate_db():
+    """Rename price_per_hour -> price_per_rent if the old column still exists."""
+    db_path = os.path.join(os.path.dirname(__file__), DATABASE)
+    db = _sqlite3.connect(db_path)
+    cols = [row[1] for row in db.execute("PRAGMA table_info(equipment)").fetchall()]
+    if 'price_per_hour' in cols and 'price_per_rent' not in cols:
+        db.execute("ALTER TABLE equipment RENAME COLUMN price_per_hour TO price_per_rent")
+        db.commit()
+    db.close()
+
 if __name__ == '__main__':
     os.makedirs(os.path.join('static', 'images', 'equipment'), exist_ok=True)
     init_db()
+    migrate_db()
     app.run(debug=True, host='0.0.0.0', port=5000)

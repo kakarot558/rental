@@ -22,17 +22,17 @@
       <div class="hero-card">
         <span class="hero-card-icon">🎵</span>
         <h3>Sound Systems</h3>
-        <p>From ₱800/hr</p>
+        <p>From ₱800/rent</p>
       </div>
       <div class="hero-card">
         <span class="hero-card-icon">💡</span>
         <h3>Lighting Rigs</h3>
-        <p>From ₱700/hr</p>
+        <p>From ₱700/rent</p>
       </div>
       <div class="hero-card">
         <span class="hero-card-icon">🎤</span>
         <h3>Videoke Systems</h3>
-        <p>From ₱600/hr</p>
+        <p>From ₱600/rent</p>
       </div>
     </div>
   </div>
@@ -66,7 +66,7 @@
         <div class="eq-card-body">
           <h3>{{ eq.name }}</h3>
           <p>{{ eq.description[:100] }}{% if eq.description|length > 100 %}...{% endif %}</p>
-          <div class="eq-price">₱{{ "%.2f"|format(eq.price_per_hour) }} <span>/ hour</span></div>
+          <div class="eq-price">₱{{ "%.2f"|format(eq.price_per_rent) }} <span>/ rent</span></div>
           <a href="{{ url_for('book', eq=eq.id) }}" class="btn btn-primary" style="width:100%;justify-content:center;">
             <i class="fas fa-calendar-plus"></i> Book This
           </a>

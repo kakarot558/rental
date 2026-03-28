@@ -35,9 +35,9 @@
           </div>
 
           <div class="aform-group {{ 'has-error' if errors.get('price') }}">
-            <label>Price Per Hour (₱) *</label>
-            <input type="number" name="price_per_hour" class="aform-control" step="0.01" min="0"
-              value="{{ eq.price_per_hour if eq else '' }}" placeholder="1500.00" required>
+            <label>Price Per Rent (₱) *</label>
+            <input type="number" name="price_per_rent" class="aform-control" step="0.01" min="0"
+              value="{{ eq.price_per_rent if eq else '' }}" placeholder="1500.00" required>
             {% if errors.get('price') %}<span class="field-error">{{ errors.price }}</span>{% endif %}
           </div>
         </div>
