@@ -56,6 +56,81 @@
     <div class="stat-value">{{ stats.pending_payments }}</div>
     <div class="stat-label">Payments to Verify</div>
   </div>
+  {% if stats.overdue > 0 %}
+  <div class="stat-card danger sc-danger">
+    <div class="stat-card-top">
+      <div class="stat-icon-box"><i class="fas fa-exclamation-circle"></i></div>
+    </div>
+    <div class="stat-value" style="color:#f87171;">{{ stats.overdue }}</div>
+    <div class="stat-label">Overdue Rentals</div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Overdue Alert Banner -->
+{% if stats.overdue > 0 %}
+<div class="alert-banner" style="margin-bottom:18px;background:rgba(239,68,68,.1);border-left:4px solid #ef4444;padding:14px 18px;border-radius:8px;display:flex;align-items:center;gap:12px;">
+  <i class="fas fa-exclamation-circle" style="color:#f87171;font-size:1.2rem;"></i>
+  <div>
+    <strong style="color:#f87171;">{{ stats.overdue }} Overdue Rental{{ 's' if stats.overdue > 1 }}</strong>
+    <span style="color:#c8c4d8;font-size:.84rem;margin-left:8px;">— These approved bookings have passed their event date without being marked complete.</span>
+    <a href="{{ url_for('admin_bookings', status='overdue') }}" style="margin-left:10px;color:#f87171;font-size:.82rem;text-decoration:underline;">View All →</a>
+  </div>
+</div>
+{% endif %}
+
+<!-- Backup & Restore -->
+<div class="admin-card" style="margin-bottom:18px;">
+  <div class="admin-card-header">
+    <h3><i class="fas fa-database"></i> Backup &amp; Restore</h3>
+  </div>
+  <div style="padding:16px 20px;display:flex;flex-wrap:wrap;gap:14px;align-items:center;">
+    <a href="{{ url_for('admin_backup') }}" class="btn btn-primary btn-sm">
+      <i class="fas fa-download"></i> Download Backup (JSON)
+    </a>
+    <form method="POST" action="{{ url_for('admin_restore') }}" enctype="multipart/form-data"
+          style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"
+          onsubmit="return confirm('Restoring will OVERWRITE current data. Are you sure?')">
+
+      <!-- Hidden real input -->
+      <input type="file" name="backup_file" id="backupFileInput" accept=".json" required
+             style="display:none;" onchange="updateFileLabel(this)">
+
+      <!-- Styled label acts as the button -->
+      <label for="backupFileInput" id="fileLabel"
+             style="display:inline-flex;align-items:center;gap:7px;cursor:pointer;
+                    padding:6px 14px;border-radius:7px;font-size:.78rem;font-weight:600;
+                    background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);
+                    color:#c8c4d8;transition:all .15s ease;white-space:nowrap;user-select:none;"
+             onmouseover="this.style.background='rgba(255,255,255,.09)';this.style.borderColor='rgba(255,255,255,.22)'"
+             onmouseout="this.style.background='rgba(255,255,255,.05)';this.style.borderColor='rgba(255,255,255,.12)'">
+        <i class="fas fa-folder-open" style="color:#e8ba5a;font-size:.8rem;"></i>
+        <span id="fileLabelText">Choose backup file…</span>
+      </label>
+
+      <button type="submit" class="btn btn-ghost btn-sm"
+              style="color:#f87171;border-color:rgba(248,113,113,.3);">
+        <i class="fas fa-upload"></i> Restore
+      </button>
+    </form>
+    <span style="font-size:.74rem;color:#7a7690;">⚠ Restore will replace all data. Keep regular backups.</span>
+
+    <script>
+    function updateFileLabel(input) {
+      var label = document.getElementById('fileLabelText');
+      if (input.files && input.files.length > 0) {
+        var name = input.files[0].name;
+        label.textContent = name.length > 28 ? name.slice(0, 25) + '...' : name;
+        document.getElementById('fileLabel').style.borderColor = 'rgba(232,186,90,.45)';
+        document.getElementById('fileLabel').style.color = '#e8ba5a';
+      } else {
+        label.textContent = 'Choose backup file…';
+        document.getElementById('fileLabel').style.borderColor = 'rgba(255,255,255,.12)';
+        document.getElementById('fileLabel').style.color = '#c8c4d8';
+      }
+    }
+    </script>
+  </div>
 </div>
 
 <!-- Pending Payment Alert -->
@@ -187,6 +262,38 @@
           </div>
           <span class="quick-stat-value" style="color:#f87171;">{{ stats.rejected if stats.rejected is defined else '—' }}</span>
         </div>
+      </div>
+    </div>
+
+    <!-- Item Availability -->
+    <div class="admin-card">
+      <div class="admin-card-header">
+        <h3><i class="fas fa-boxes"></i> Item Availability</h3>
+        <span style="font-size:.7rem;color:#7a7690;">Today & upcoming</span>
+      </div>
+      <div class="admin-card-body" style="padding:10px 14px;">
+        {% if avail_list %}
+        {% for eq in avail_list %}
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 4px;border-bottom:1px solid rgba(255,255,255,.04);">
+          <div style="min-width:0;">
+            <div style="font-size:.78rem;font-weight:600;color:#edeae0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px;">{{ eq.name }}</div>
+            <div style="font-size:.68rem;color:#7a7690;">{{ eq.category | capitalize }}</div>
+          </div>
+          <span style="font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:12px;flex-shrink:0;
+            {% if eq.is_booked %}background:rgba(245,158,11,.12);color:#fbbf24;border:1px solid rgba(245,158,11,.25);
+            {% elif eq.status != 'available' %}background:rgba(239,68,68,.1);color:#f87171;border:1px solid rgba(239,68,68,.25);
+            {% else %}background:rgba(34,197,94,.1);color:#4ade80;border:1px solid rgba(34,197,94,.25);{% endif %}">
+            {{ 'Rented' if eq.is_booked else eq.status | capitalize }}
+          </span>
+        </div>
+        {% endfor %}
+        <div style="margin-top:10px;font-size:.72rem;color:#7a7690;text-align:center;">
+          {{ stats.available_now }} of {{ stats.total_equipment }} items free today
+        </div>
+        {% endif %}
+        <a href="{{ url_for('admin_equipment') }}" class="btn btn-ghost btn-sm" style="width:100%;justify-content:center;font-size:.74rem;margin-top:8px;">
+          <i class="fas fa-cog"></i> Manage Equipment
+        </a>
       </div>
     </div>
 

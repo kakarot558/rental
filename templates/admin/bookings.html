@@ -72,7 +72,7 @@
       </thead>
       <tbody>
         {% for b in bookings %}
-        <tr>
+        <tr{% if b.status == 'overdue' %} style="background:rgba(239,68,68,.06);border-left:3px solid rgba(239,68,68,.4);"{% endif %}>
           <td data-label="Ref"><code>{{ b.booking_reference }}</code></td>
           <td data-label="Customer">
             <div style="font-weight:600;color:#edeae0;font-size:.85rem;">{{ b.customer_name }}</div>

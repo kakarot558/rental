@@ -30,10 +30,19 @@
     <div class="card-body" style="padding:20px;">
       <div class="detail-row"><span>Total Price</span><span style="color:#e8ba5a;font-weight:800;">{{ booking.total_price | currency }}</span></div>
       <div class="detail-row"><span>Amount Paid</span><span style="color:#4ade80;font-weight:700;">{{ booking.amount_paid | currency }}</span></div>
-      <div class="detail-row"><span>Remaining</span><span style="color:#f87171;font-weight:700;">{{ balance | currency }}</span></div>
+      <div class="detail-row">
+        <span>Remaining Balance</span>
+        <span style="color:{{ '#34d399' if balance <= 0 else '#f87171' }};font-weight:700;">
+          {{ balance | currency }}{% if balance <= 0 %} ✓{% endif %}
+        </span>
+      </div>
+      <div class="detail-row">
+        <span>Booking Status</span>
+        <span class="badge badge-{{ booking.status }}">{{ booking.status|capitalize }}</span>
+      </div>
       <div class="detail-row">
         <span>Payment Status</span>
-        <span class="badge badge-pay-{{ booking.payment_status }}">
+        <span class="badge badge-{{ booking.payment_status }}">
           {{ {'unpaid':'Unpaid','half':'50% Paid','partial':'Partial','full':'Fully Paid'}.get(booking.payment_status, booking.payment_status) }}
         </span>
       </div>

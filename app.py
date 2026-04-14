@@ -3,7 +3,7 @@ Event Equipment Rental & Booking Management System
 Flask Backend - app.py  (Complete Final Version)
 """
 
-import os, re, uuid, csv, sqlite3 as _sqlite3, io, json, secrets
+import os, re, uuid, csv, sqlite3 as _sqlite3, io, json, secrets, shutil, zipfile, tempfile
 from datetime import datetime, date, timedelta
 from functools import wraps
 from flask import (Flask, render_template, request, redirect, url_for,
@@ -241,7 +241,29 @@ def calc_price(equipment_id, start_time=None, end_time=None):
     eq = query_db("SELECT price_per_rent FROM equipment WHERE id=?", [equipment_id], one=True)
     if not eq:
         return 0
-    return round(eq['price_per_rent'], 2)
+    base = round(eq['price_per_rent'], 2)
+    if start_time and end_time:
+        try:
+            fmt = '%H:%M'
+            st  = datetime.strptime(str(start_time)[:5], fmt)
+            et  = datetime.strptime(str(end_time)[:5],   fmt)
+            hrs = (et - st).seconds / 3600
+            if hrs > 0:
+                return round(base * hrs, 2)
+        except Exception:
+            pass
+    return base
+
+def mark_overdue_bookings():
+    """Auto-mark approved bookings whose event_date has passed as overdue."""
+    today = date.today().isoformat()
+    query_db(
+        "UPDATE bookings SET status='overdue' WHERE status='approved' AND event_date < ?",
+        [today], commit=True
+    )
+
+def get_overdue_count():
+    return query_db("SELECT COUNT(*) as c FROM bookings WHERE status='overdue'", one=True)['c']
 
 def recalc_payment_status(booking_id):
     booking = query_db("SELECT total_price FROM bookings WHERE id=?", [booking_id], one=True)
@@ -260,6 +282,13 @@ def recalc_payment_status(booking_id):
              [paid, ps, booking_id], commit=True)
 
 # ── Template Filters ──────────────────────────────────────────────
+@app.template_global()
+def get_overdue_count():
+    try:
+        return query_db("SELECT COUNT(*) as c FROM bookings WHERE status='overdue'", one=True)['c']
+    except Exception:
+        return 0
+
 @app.template_filter('currency')
 def currency_filter(v):
     try:    return f"₱{float(v):,.2f}"
@@ -529,12 +558,14 @@ def admin_logout():
 @app.route('/admin/dashboard')
 @login_required
 def admin_dashboard():
+    mark_overdue_bookings()
     stats = {
         'total':            query_db("SELECT COUNT(*) as c FROM bookings", one=True)['c'],
         'pending':          query_db("SELECT COUNT(*) as c FROM bookings WHERE status='pending'", one=True)['c'],
         'approved':         query_db("SELECT COUNT(*) as c FROM bookings WHERE status='approved'", one=True)['c'],
         'completed':        query_db("SELECT COUNT(*) as c FROM bookings WHERE status='completed'", one=True)['c'],
-        'revenue':          query_db("SELECT COALESCE(SUM(total_price),0) as r FROM bookings WHERE status IN ('approved','completed')", one=True)['r'],
+        'overdue':          get_overdue_count(),
+        'revenue':          query_db("SELECT COALESCE(SUM(total_price),0) as r FROM bookings WHERE status IN ('approved','completed','overdue')", one=True)['r'],
         'collected':        query_db("SELECT COALESCE(SUM(amount_paid),0) as r FROM bookings", one=True)['r'],
         'pending_payments': query_db("SELECT COUNT(*) as c FROM payments WHERE status='pending'", one=True)['c'],
     }
@@ -547,7 +578,21 @@ def admin_dashboard():
         FROM bookings WHERE status IN ('approved','completed')
           AND strftime('%Y',event_date)=strftime('%Y','now')
         GROUP BY month ORDER BY month""")]
-    return render_template('admin/dashboard.html', stats=stats, recent=recent, monthly=monthly)
+    # Real-time availability: items booked today/future (approved)
+    today_str   = date.today().isoformat()
+    booked_ids  = set(
+        r['equipment_id'] for r in query_db(
+            "SELECT equipment_id FROM bookings WHERE status='approved' AND event_date>=?",
+            [today_str])
+    )
+    equip_avail = query_db("SELECT id, name, category, status FROM equipment ORDER BY category, name")
+    avail_list  = [
+        dict(e, is_booked=(e['id'] in booked_ids)) for e in equip_avail
+    ]
+    stats['total_equipment'] = len(equip_avail)
+    stats['available_now']   = sum(1 for e in avail_list if not e['is_booked'] and e['status']=='available')
+    return render_template('admin/dashboard.html', stats=stats, recent=recent,
+                           monthly=monthly, avail_list=avail_list)
 
 
 # ══════════════════════════════════════════════════════════════════
@@ -565,6 +610,7 @@ def admin_bookings():
     q      = "SELECT b.*, e.name as eq_name FROM bookings b JOIN equipment e ON b.equipment_id=e.id WHERE 1=1"
     args   = []
     if sf:     q += " AND b.status=?";         args.append(sf)
+    mark_overdue_bookings()
     if pf:     q += " AND b.payment_status=?"; args.append(pf)
     if df:     q += " AND b.event_date>=?";    args.append(df)
     if dt:     q += " AND b.event_date<=?";    args.append(dt)
@@ -582,7 +628,7 @@ def admin_bookings():
 @login_required
 def booking_action(bid):
     action = request.form.get('action')
-    map_   = {'approve': 'approved', 'reject': 'rejected', 'complete': 'completed'}
+    map_   = {'approve': 'approved', 'reject': 'rejected', 'complete': 'completed', 'overdue': 'overdue'}
     if action == 'delete':
         query_db("DELETE FROM payments WHERE booking_id=?", [bid], commit=True)
         query_db("DELETE FROM bookings WHERE id=?",         [bid], commit=True)
@@ -646,30 +692,56 @@ def verify_payment(pid):
 @app.route('/admin/payments/record', methods=['POST'])
 @login_required
 def record_payment():
-    booking_id   = request.form.get('booking_id')
-    amount_str   = request.form.get('amount', '')
-    method       = request.form.get('method', 'cash')
-    payment_type = request.form.get('payment_type', 'full')
-    notes        = request.form.get('notes', '')
-    adm          = get_admin_session()
-    booking      = query_db("SELECT * FROM bookings WHERE id=?", [booking_id], one=True)
+    booking_id    = request.form.get('booking_id')
+    amount_str    = request.form.get('amount', '')
+    tendered_str  = request.form.get('tendered_amount', '')
+    method        = request.form.get('method', 'cash')
+    payment_type  = request.form.get('payment_type', 'full')
+    notes         = request.form.get('notes', '')
+    adm           = get_admin_session()
+    booking       = query_db("SELECT * FROM bookings WHERE id=?", [booking_id], one=True)
     if not booking:
         flash('Booking not found.', 'danger')
         return redirect(url_for('admin_payments'))
+
+    balance = booking['total_price'] - booking['amount_paid']
+
     try:
         amount = float(amount_str)
-        assert amount > 0
-    except Exception:
-        flash('Invalid amount.', 'danger')
+        if amount <= 0:
+            raise ValueError("Amount must be positive")
+        if amount > balance + 0.01:
+            flash(f'Amount ₱{amount:,.2f} exceeds remaining balance of ₱{balance:,.2f}.', 'danger')
+            return redirect(url_for('admin_payments'))
+    except (ValueError, TypeError) as e:
+        flash(f'Invalid amount: {e}', 'danger')
         return redirect(url_for('admin_payments'))
+
+    change_note = ''
+    if method == 'cash' and tendered_str:
+        try:
+            tendered = float(tendered_str)
+            if tendered < amount:
+                flash(f'Tendered amount ₱{tendered:,.2f} is less than payment of ₱{amount:,.2f}.', 'danger')
+                return redirect(url_for('admin_payments'))
+            change = tendered - amount
+            change_note = f' | Tendered: ₱{tendered:,.2f} | Change: ₱{change:,.2f}'
+        except (ValueError, TypeError):
+            flash('Invalid tendered amount.', 'danger')
+            return redirect(url_for('admin_payments'))
+
+    full_notes = (notes + change_note).strip(' |')
     pay_ref = generate_payment_ref()
     query_db("""INSERT INTO payments
         (booking_id,payment_reference,amount,method,payment_type,
          status,notes,verified_by,verified_at)
         VALUES (?,?,?,?,?,'verified',?,?,datetime('now'))""",
-        [booking_id, pay_ref, amount, method, payment_type, notes, adm['username']], commit=True)
+        [booking_id, pay_ref, amount, method, payment_type, full_notes, adm['username']], commit=True)
     recalc_payment_status(int(booking_id))
-    flash(f'Cash payment of P{amount:,.2f} recorded and verified. Ref: {pay_ref}', 'success')
+    if change_note:
+        flash(f'Cash payment of ₱{amount:,.2f} recorded. Change given: ₱{float(tendered_str)-amount:,.2f}. Ref: {pay_ref}', 'success')
+    else:
+        flash(f'Payment of ₱{amount:,.2f} recorded and verified. Ref: {pay_ref}', 'success')
     return redirect(url_for('admin_payments'))
 
 
@@ -784,7 +856,7 @@ def admin_calendar():
     rows   = query_db("""SELECT b.id,b.booking_reference,b.customer_name,b.event_date,
         b.start_time,b.end_time,b.status,e.name as eq_name,e.category
         FROM bookings b JOIN equipment e ON b.equipment_id=e.id
-        WHERE b.status IN ('pending','approved') ORDER BY b.event_date""")
+        WHERE b.status IN ('pending','approved','overdue') ORDER BY b.event_date""")
     colors = {'pending':'#f59e0b','approved':'#10b981','completed':'#6366f1','rejected':'#ef4444'}
     events = [{'title': f"{r['customer_name']} — {r['eq_name']}",
                'start': f"{r['event_date']}T{r['start_time']}",
@@ -799,19 +871,66 @@ def admin_calendar():
 @app.route('/admin/reports')
 @login_required
 def admin_reports():
-    df   = request.args.get('date_from', '')
-    dt   = request.args.get('date_to', '')
+    df         = request.args.get('date_from', '')
+    dt         = request.args.get('date_to', '')
+    period     = request.args.get('period', '')       # daily / weekly / monthly
+    eq_filter  = request.args.get('equipment_id', '')
+    cust_filter= request.args.get('customer', '')
+
+    # Apply period shortcuts
+    today = date.today()
+    if period == 'daily':
+        df = dt = today.isoformat()
+    elif period == 'weekly':
+        df = (today - timedelta(days=today.weekday())).isoformat()
+        dt = today.isoformat()
+    elif period == 'monthly':
+        df = today.replace(day=1).isoformat()
+        dt = today.isoformat()
+
     q    = """SELECT b.*, e.name as eq_name, e.category FROM bookings b
-              JOIN equipment e ON b.equipment_id=e.id WHERE b.status IN ('approved','completed')"""
+              JOIN equipment e ON b.equipment_id=e.id WHERE b.status IN ('approved','completed','overdue')"""
     args = []
-    if df: q += " AND b.event_date>=?"; args.append(df)
-    if dt: q += " AND b.event_date<=?"; args.append(dt)
+    if df:          q += " AND b.event_date>=?";  args.append(df)
+    if dt:          q += " AND b.event_date<=?";  args.append(dt)
+    if eq_filter:   q += " AND b.equipment_id=?"; args.append(eq_filter)
+    if cust_filter: q += " AND b.customer_name LIKE ?"; args.append(f'%{cust_filter}%')
     q += " ORDER BY b.event_date DESC"
     rows      = query_db(q, args)
     total_rev = sum(r['total_price'] for r in rows)
-    by_cat    = {}
+
+    # Revenue by category
+    by_cat = {}
     for r in rows:
         by_cat[r['category']] = by_cat.get(r['category'], 0) + r['total_price']
+
+    # Most rented items
+    item_counts = {}
+    for r in rows:
+        item_counts[r['eq_name']] = item_counts.get(r['eq_name'], 0) + 1
+    top_items = sorted(item_counts.items(), key=lambda x: x[1], reverse=True)[:5]
+
+    # Status breakdown (all time or filtered)
+    status_q    = "SELECT status, COUNT(*) as cnt FROM bookings WHERE 1=1"
+    status_args = []
+    if df:        status_q += " AND event_date>=?"; status_args.append(df)
+    if dt:        status_q += " AND event_date<=?"; status_args.append(dt)
+    status_q   += " GROUP BY status"
+    status_rows = query_db(status_q, status_args)
+    status_map  = {r['status']: r['cnt'] for r in status_rows}
+
+    # Monthly trend for chart
+    trend = query_db("""
+        SELECT strftime('%Y-%m', event_date) as ym,
+               COUNT(*) as cnt,
+               COALESCE(SUM(total_price),0) as rev
+        FROM bookings WHERE status IN ('approved','completed','overdue')
+        GROUP BY ym ORDER BY ym DESC LIMIT 12""")
+    trend = list(reversed([dict(r) for r in trend]))
+
+    # Equipment list for filter dropdown
+    all_equip = query_db("SELECT id, name FROM equipment ORDER BY name")
+
     if request.args.get('download') == 'csv':
         out = io.StringIO()
         w   = csv.writer(out)
@@ -826,8 +945,66 @@ def admin_reports():
         resp.headers['Content-Disposition'] = 'attachment; filename=report.csv'
         resp.headers['Content-Type']        = 'text/csv'
         return resp
-    return render_template('admin/reports.html', rows=rows, total_rev=total_rev,
-                           by_cat=by_cat, date_from=df, date_to=dt)
+
+    return render_template('admin/reports.html',
+                           rows=rows, total_rev=total_rev, by_cat=by_cat,
+                           date_from=df, date_to=dt, period=period,
+                           top_items=top_items, status_map=status_map,
+                           trend=trend, all_equip=all_equip,
+                           eq_filter=eq_filter, cust_filter=cust_filter)
+
+
+# ── Backup / Restore ──────────────────────────────────────────────
+
+@app.route('/admin/backup')
+@login_required
+def admin_backup():
+    """Download a full JSON backup of all database tables."""
+    db      = get_db()
+    tables  = ['users','equipment','bookings','payments','admin_sessions']
+    backup  = {'version': 2, 'created_at': datetime.now().isoformat(), 'tables': {}}
+    for tbl in tables:
+        rows = db.execute(f"SELECT * FROM {tbl}").fetchall()
+        backup['tables'][tbl] = [dict(r) for r in rows]
+    out  = json.dumps(backup, indent=2, default=str)
+    resp = make_response(out)
+    resp.headers['Content-Disposition'] = (
+        f'attachment; filename=rental_backup_{datetime.now().strftime("%Y%m%d_%H%M%S")}.json')
+    resp.headers['Content-Type'] = 'application/json'
+    return resp
+
+@app.route('/admin/restore', methods=['POST'])
+@login_required
+def admin_restore():
+    """Restore database from uploaded JSON backup."""
+    f = request.files.get('backup_file')
+    if not f:
+        flash('No backup file uploaded.', 'danger')
+        return redirect(url_for('admin_dashboard'))
+    try:
+        data = json.load(f)
+        if 'tables' not in data:
+            raise ValueError("Invalid backup format")
+        db = get_db()
+        # Disable FK checks during restore to avoid ordering issues
+        db.execute("PRAGMA foreign_keys = OFF")
+        # Restore in dependency order; skip admin_sessions (keep current login)
+        restore_order = ['users', 'equipment', 'bookings', 'payments']
+        for tbl in restore_order:
+            rows = data['tables'].get(tbl, [])
+            db.execute(f"DELETE FROM {tbl}")
+            if rows:
+                cols = ', '.join(rows[0].keys())
+                ph   = ', '.join(['?'] * len(rows[0]))
+                for row in rows:
+                    db.execute(f"INSERT OR REPLACE INTO {tbl} ({cols}) VALUES ({ph})",
+                               list(row.values()))
+        db.commit()
+        db.execute("PRAGMA foreign_keys = ON")
+        flash(f'Database restored successfully from backup dated {data.get("created_at","unknown")}.', 'success')
+    except Exception as e:
+        flash(f'Restore failed: {e}', 'danger')
+    return redirect(url_for('admin_dashboard'))
 
 
 # ══════════════════════════════════════════════════════════════════

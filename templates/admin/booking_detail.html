@@ -337,6 +337,7 @@
       {% elif booking.status == 'approved' %}<i class="fas fa-check-circle" style="margin-right:5px;font-size:.72rem;"></i>
       {% elif booking.status == 'completed' %}<i class="fas fa-flag-checkered" style="margin-right:5px;font-size:.72rem;"></i>
       {% elif booking.status == 'rejected' %}<i class="fas fa-times-circle" style="margin-right:5px;font-size:.72rem;"></i>
+      {% elif booking.status == 'overdue' %}<i class="fas fa-exclamation-circle" style="margin-right:5px;font-size:.72rem;"></i>
       {% endif %}
       {{ booking.status|capitalize }}
     </span>
@@ -354,7 +355,7 @@
     <div class="tl-dot"><i class="fas fa-hourglass-half"></i></div>
     <span class="tl-label">Pending</span>
   </div>
-  <div class="tl-step {{ 'active' if booking.status == 'approved' else 'done' if booking.status == 'completed' else '' }}">
+  <div class="tl-step {{ 'active' if booking.status == 'approved' else 'done' if booking.status in ['completed','overdue'] else '' }}">
     <div class="tl-dot"><i class="fas fa-check-circle"></i></div>
     <span class="tl-label">Approved</span>
   </div>

@@ -64,18 +64,27 @@
     <button type="button" class="btn btn-ghost btn-sm"><i class="fas fa-chevron-down"></i></button>
   </div>
   <div class="d-none" id="recordFormWrap">
-    <form method="POST" action="{{ url_for('record_payment') }}" style="padding:18px 20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;align-items:end;">
+    <form method="POST" action="{{ url_for('record_payment') }}" id="cashPayForm"
+          style="padding:18px 20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:14px;align-items:end;">
       <div class="aform-group">
         <label>Booking ID</label>
-        <input type="number" name="booking_id" class="aform-control" placeholder="e.g. 3" required>
+        <input type="number" name="booking_id" id="cashBookingId" class="aform-control" placeholder="e.g. 3" required>
       </div>
       <div class="aform-group">
-        <label>Amount (₱)</label>
-        <input type="number" name="amount" class="aform-control" step="0.01" min="1" placeholder="0.00" required>
+        <label>Amount Due (₱)</label>
+        <input type="number" name="amount" id="cashAmount" class="aform-control" step="0.01" min="0.01" placeholder="0.00" required oninput="calcChange()">
+      </div>
+      <div class="aform-group" id="tenderedGroup" style="display:none;">
+        <label>Tendered (₱) <span style="color:#e8ba5a;font-size:.7rem;">Cash only</span></label>
+        <input type="number" name="tendered_amount" id="cashTendered" class="aform-control" step="0.01" min="0" placeholder="0.00" oninput="calcChange()">
+      </div>
+      <div class="aform-group" id="changeGroup" style="display:none;">
+        <label>Change (₱)</label>
+        <div id="changeDisplay" style="padding:8px 12px;background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.3);border-radius:6px;font-family:'Sora',sans-serif;font-weight:700;color:#34d399;font-size:1rem;">₱0.00</div>
       </div>
       <div class="aform-group">
         <label>Method</label>
-        <select name="method" class="aform-control">
+        <select name="method" id="cashMethod" class="aform-control" onchange="toggleTendered()">
           <option value="cash">💵 Cash</option>
           <option value="gcash">💚 GCash</option>
           <option value="maya">🔵 Maya</option>
@@ -93,12 +102,67 @@
         <label>Notes</label>
         <input type="text" name="notes" class="aform-control" placeholder="e.g. Cash received in person">
       </div>
+      <!-- Payment Summary Preview -->
+      <div id="paymentSummary" style="grid-column:1/-1;display:none;padding:12px 16px;background:rgba(232,186,90,.08);border:1px solid rgba(232,186,90,.25);border-radius:8px;font-size:.82rem;color:#edeae0;">
+        <strong style="color:#e8ba5a;">Payment Summary</strong>
+        <div id="summaryContent" style="margin-top:6px;display:grid;grid-template-columns:auto 1fr;gap:4px 12px;"></div>
+      </div>
       <div>
-        <button type="submit" class="btn btn-success btn-sm" style="width:100%;justify-content:center;">
+        <button type="submit" class="btn btn-success btn-sm" style="width:100%;justify-content:center;" onclick="return confirmPayment()">
           <i class="fas fa-check"></i> Record & Verify
         </button>
       </div>
     </form>
+    <script>
+    function toggleTendered() {
+      const isCash = document.getElementById('cashMethod').value === 'cash';
+      document.getElementById('tenderedGroup').style.display = isCash ? '' : 'none';
+      document.getElementById('changeGroup').style.display   = isCash ? '' : 'none';
+      calcChange();
+    }
+    function calcChange() {
+      const amt = parseFloat(document.getElementById('cashAmount').value) || 0;
+      const ten = parseFloat(document.getElementById('cashTendered').value) || 0;
+      const isCash = document.getElementById('cashMethod').value === 'cash';
+      // Change display
+      if (isCash && ten > 0) {
+        const ch = ten - amt;
+        const el = document.getElementById('changeDisplay');
+        el.textContent = '₱' + Math.max(ch,0).toLocaleString('en-PH',{minimumFractionDigits:2});
+        el.style.color = ch < 0 ? '#f87171' : '#34d399';
+        el.style.borderColor = ch < 0 ? 'rgba(248,113,113,.3)' : 'rgba(52,211,153,.3)';
+        el.style.background  = ch < 0 ? 'rgba(248,113,113,.1)' : 'rgba(52,211,153,.12)';
+      }
+      // Summary preview
+      if (amt > 0) {
+        const bid = document.getElementById('cashBookingId').value;
+        const method = document.getElementById('cashMethod').value;
+        let rows = `<span style="color:#7a7690">Booking ID:</span><span>#${bid||'—'}</span>
+                    <span style="color:#7a7690">Amount:</span><span style="color:#e8ba5a;font-weight:700">₱${amt.toLocaleString('en-PH',{minimumFractionDigits:2})}</span>
+                    <span style="color:#7a7690">Method:</span><span>${method.toUpperCase()}</span>`;
+        if (isCash && ten > 0) {
+          const ch = ten - amt;
+          rows += `<span style="color:#7a7690">Tendered:</span><span>₱${ten.toLocaleString('en-PH',{minimumFractionDigits:2})}</span>
+                   <span style="color:#7a7690">Change:</span><span style="color:${ch<0?'#f87171':'#34d399'}">₱${Math.max(ch,0).toLocaleString('en-PH',{minimumFractionDigits:2})}</span>`;
+        }
+        document.getElementById('summaryContent').innerHTML = rows;
+        document.getElementById('paymentSummary').style.display = '';
+      } else {
+        document.getElementById('paymentSummary').style.display = 'none';
+      }
+    }
+    function confirmPayment() {
+      const amt = parseFloat(document.getElementById('cashAmount').value) || 0;
+      const ten = parseFloat(document.getElementById('cashTendered').value) || 0;
+      const isCash = document.getElementById('cashMethod').value === 'cash';
+      if (amt <= 0) { alert('Please enter a valid amount.'); return false; }
+      if (isCash && ten > 0 && ten < amt) {
+        alert('Tendered amount is less than the payment amount!'); return false;
+      }
+      return true;
+    }
+    toggleTendered();
+    </script>
   </div>
 </div>
 

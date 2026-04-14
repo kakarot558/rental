@@ -81,6 +81,13 @@
         <span style="font-size:0.8rem;color:var(--text-muted);">
           <i class="fas fa-clock"></i> <span id="liveClock"></span>
         </span>
+        {% set overdue_count = get_overdue_count() %}
+        {% if overdue_count > 0 %}
+        <a href="{{ url_for('admin_bookings', status='overdue') }}"
+           style="display:flex;align-items:center;gap:6px;padding:6px 12px;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.35);border-radius:7px;font-size:.75rem;font-weight:600;color:#f87171;text-decoration:none;">
+          <i class="fas fa-exclamation-circle"></i> {{ overdue_count }} Overdue
+        </a>
+        {% endif %}
         <a href="{{ url_for('book') }}" target="_blank" class="btn btn-primary btn-sm">
           <i class="fas fa-plus"></i> New Booking
         </a>

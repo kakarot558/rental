@@ -43,7 +43,7 @@
         <div class="eq-card-body">
           <h3>{{ eq.name }}</h3>
           <p>{{ eq.description }}</p>
-          <div class="eq-price">₱{{ "%.2f"|format(eq.price_per_hour) }} <span>/ hour</span></div>
+         <div class="eq-price">₱{{ "%.2f"|format(eq.price_per_rent) }} <span>/ rent</span></div>
           <a href="{{ url_for('book', eq=eq.id) }}" class="btn btn-primary" style="width:100%;justify-content:center;">
             <i class="fas fa-calendar-plus"></i> Book This Equipment
           </a>
