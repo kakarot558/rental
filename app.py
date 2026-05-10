@@ -241,18 +241,8 @@ def calc_price(equipment_id, start_time=None, end_time=None):
     eq = query_db("SELECT price_per_rent FROM equipment WHERE id=?", [equipment_id], one=True)
     if not eq:
         return 0
-    base = round(eq['price_per_rent'], 2)
-    if start_time and end_time:
-        try:
-            fmt = '%H:%M'
-            st  = datetime.strptime(str(start_time)[:5], fmt)
-            et  = datetime.strptime(str(end_time)[:5],   fmt)
-            hrs = (et - st).seconds / 3600
-            if hrs > 0:
-                return round(base * hrs, 2)
-        except Exception:
-            pass
-    return base
+    # Price is per day — return flat daily rate regardless of time range
+    return round(eq['price_per_rent'], 2)
 
 def mark_overdue_bookings():
     """Auto-mark approved bookings whose event_date has passed as overdue."""

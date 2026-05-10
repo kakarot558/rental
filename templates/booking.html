@@ -466,7 +466,7 @@
               <option value="{{ eq.id }}"
                 data-price="{{ eq.price_per_rent }}"
                 {{ 'selected' if form_data.get('equipment_id') == eq.id|string or pre_eq == eq.id|string }}>
-                {{ eq.name }} — ₱{{ "%.2f"|format(eq.price_per_rent) }}/rent ({{ eq.category|capitalize }})
+                {{ eq.name }} — ₱{{ "%.2f"|format(eq.price_per_rent) }}/day ({{ eq.category|capitalize }})
               </option>
               {% endfor %}
             </select>
