@@ -1,0 +1,135 @@
+{% extends 'admin/base.html' %}
+{% block title %}Backup & Restore{% endblock %}
+{% block page_title %}Backup &amp; Restore{% endblock %}
+{% block page_subtitle %}Download a full database backup or restore from a previous backup file{% endblock %}
+
+{% block content %}
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:860px;">
+
+  <!-- ── BACKUP ── -->
+  <div class="admin-card">
+    <div class="admin-card-header">
+      <h3><i class="fas fa-download" style="color:#7c6ff7;"></i> Download Backup</h3>
+    </div>
+    <div style="padding:22px 20px;">
+      <p style="font-size:.85rem;color:#a09db8;margin-bottom:18px;line-height:1.6;">
+        Export the entire database as a <strong style="color:#c8c4d8;">JSON file</strong> — includes
+        all bookings, equipment, payments, and user accounts.
+        Store this file somewhere safe.
+      </p>
+      <a href="{{ url_for('admin_backup') }}" class="btn btn-primary"
+         style="display:inline-flex;align-items:center;gap:8px;width:100%;justify-content:center;">
+        <i class="fas fa-database"></i> Download Backup (JSON)
+      </a>
+      <p style="font-size:.74rem;color:#7a7690;margin-top:12px;text-align:center;">
+        File will be named <em>rental_backup_YYYYMMDD_HHMMSS.json</em>
+      </p>
+    </div>
+  </div>
+
+  <!-- ── RESTORE ── -->
+  <div class="admin-card">
+    <div class="admin-card-header">
+      <h3><i class="fas fa-upload" style="color:#f87171;"></i> Restore from Backup</h3>
+    </div>
+    <div style="padding:22px 20px;">
+      <p style="font-size:.85rem;color:#a09db8;margin-bottom:18px;line-height:1.6;">
+        Upload a previously downloaded <strong style="color:#c8c4d8;">JSON backup file</strong> to
+        fully restore the database. <strong style="color:#f87171;">This will overwrite all current data.</strong>
+      </p>
+
+      <form method="POST" action="{{ url_for('admin_restore') }}" enctype="multipart/form-data"
+            onsubmit="return confirm('⚠️ This will OVERWRITE all current data with the backup.\n\nAre you absolutely sure?')">
+
+        <!-- Hidden real file input -->
+        <input type="file" name="backup_file" id="backupFileInput" accept=".json" required
+               style="display:none;" onchange="updateFileLabel(this)">
+
+        <!-- Styled file picker -->
+        <label for="backupFileInput" id="fileLabel"
+               style="display:flex;align-items:center;justify-content:center;gap:8px;
+                      cursor:pointer;padding:11px 14px;border-radius:8px;font-size:.82rem;
+                      font-weight:600;width:100%;box-sizing:border-box;
+                      background:rgba(255,255,255,.04);border:1.5px dashed rgba(255,255,255,.15);
+                      color:#a09db8;transition:all .15s ease;margin-bottom:12px;"
+               onmouseover="this.style.borderColor='rgba(124,111,247,.5)';this.style.color='#c8c4d8';"
+               onmouseout="if(!window._fileChosen){this.style.borderColor='rgba(255,255,255,.15)';this.style.color='#a09db8';}">
+          <i class="fas fa-folder-open" style="color:#e8ba5a;"></i>
+          <span id="fileLabelText">Choose backup file…</span>
+        </label>
+
+        <button type="submit" id="restoreBtn" class="btn"
+                style="display:inline-flex;align-items:center;gap:8px;width:100%;
+                       justify-content:center;background:rgba(248,113,113,.12);
+                       color:#f87171;border:1px solid rgba(248,113,113,.35);
+                       opacity:.5;cursor:not-allowed;"
+                disabled>
+          <i class="fas fa-undo-alt"></i> Restore Database
+        </button>
+      </form>
+
+      <p style="font-size:.74rem;color:#7a7690;margin-top:12px;display:flex;gap:6px;align-items:flex-start;">
+        <i class="fas fa-exclamation-triangle" style="color:#fbbf24;margin-top:1px;flex-shrink:0;"></i>
+        Restore will replace all bookings, equipment, payments, and users. This cannot be undone.
+      </p>
+    </div>
+  </div>
+
+</div>
+
+<!-- Tips card -->
+<div class="admin-card" style="margin-top:20px;max-width:860px;">
+  <div class="admin-card-header">
+    <h3><i class="fas fa-lightbulb" style="color:#e8ba5a;"></i> Backup Best Practices</h3>
+  </div>
+  <div style="padding:18px 20px;display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+    {% for tip in [
+      ('fa-calendar-check','Schedule regular backups','Download a backup before any major changes (new equipment, bulk edits, etc.).'),
+      ('fa-hdd','Store in multiple places','Keep copies on your local drive, cloud storage (Google Drive, Dropbox), and email.'),
+      ('fa-tag','Label your backups','The filename already includes the date/time — do not rename it to avoid confusion.'),
+      ('fa-lock','Secure your backups','The JSON file contains customer data. Do not share it publicly.')
+    ] %}
+    <div style="display:flex;gap:12px;align-items:flex-start;padding:10px 12px;
+                background:rgba(255,255,255,.03);border-radius:8px;border:1px solid rgba(255,255,255,.07);">
+      <i class="fas {{ tip[0] }}" style="color:#7c6ff7;margin-top:3px;flex-shrink:0;font-size:.9rem;"></i>
+      <div>
+        <div style="font-size:.82rem;font-weight:600;color:#c8c4d8;margin-bottom:3px;">{{ tip[1] }}</div>
+        <div style="font-size:.77rem;color:#7a7690;line-height:1.5;">{{ tip[2] }}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<script>
+window._fileChosen = false;
+function updateFileLabel(input) {
+  var label     = document.getElementById('fileLabelText');
+  var labelEl   = document.getElementById('fileLabel');
+  var restoreBtn = document.getElementById('restoreBtn');
+  if (input.files && input.files.length > 0) {
+    var name = input.files[0].name;
+    label.textContent = name.length > 30 ? name.slice(0, 27) + '…' : name;
+    labelEl.style.borderColor = 'rgba(232,186,90,.5)';
+    labelEl.style.color       = '#e8ba5a';
+    labelEl.style.borderStyle = 'solid';
+    window._fileChosen = true;
+    // Enable the restore button
+    restoreBtn.disabled = false;
+    restoreBtn.style.opacity = '1';
+    restoreBtn.style.cursor  = 'pointer';
+  } else {
+    label.textContent = 'Choose backup file…';
+    labelEl.style.borderColor = 'rgba(255,255,255,.15)';
+    labelEl.style.color       = '#a09db8';
+    labelEl.style.borderStyle = 'dashed';
+    window._fileChosen = false;
+    restoreBtn.disabled = true;
+    restoreBtn.style.opacity = '.5';
+    restoreBtn.style.cursor  = 'not-allowed';
+  }
+}
+</script>
+
+{% endblock %}

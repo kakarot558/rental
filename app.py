@@ -946,10 +946,16 @@ def admin_reports():
 
 # ── Backup / Restore ──────────────────────────────────────────────
 
+@app.route('/admin/backup-page')
+@login_required
+def admin_backup_page():
+    """Render the Backup & Restore page."""
+    return render_template('admin/backup.html')
+
 @app.route('/admin/backup')
 @login_required
 def admin_backup():
-    """Download a full JSON backup of all database tables."""
+
     db      = get_db()
     tables  = ['users','equipment','bookings','payments','admin_sessions']
     backup  = {'version': 2, 'created_at': datetime.now().isoformat(), 'tables': {}}
