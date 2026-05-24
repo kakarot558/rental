@@ -79,6 +79,59 @@
 </div>
 {% endif %}
 
+<!-- Backup & Restore -->
+<div class="admin-card" style="margin-bottom:18px;">
+  <div class="admin-card-header">
+    <h3><i class="fas fa-database"></i> Backup &amp; Restore</h3>
+  </div>
+  <div style="padding:16px 20px;display:flex;flex-wrap:wrap;gap:14px;align-items:center;">
+    <a href="{{ url_for('admin_backup') }}" class="btn btn-primary btn-sm">
+      <i class="fas fa-download"></i> Download Backup (JSON)
+    </a>
+    <form method="POST" action="{{ url_for('admin_restore') }}" enctype="multipart/form-data"
+          style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"
+          onsubmit="return confirm('Restoring will OVERWRITE current data. Are you sure?')">
+
+      <!-- Hidden real input -->
+      <input type="file" name="backup_file" id="backupFileInput" accept=".json" required
+             style="display:none;" onchange="updateFileLabel(this)">
+
+      <!-- Styled label acts as the button -->
+      <label for="backupFileInput" id="fileLabel"
+             style="display:inline-flex;align-items:center;gap:7px;cursor:pointer;
+                    padding:6px 14px;border-radius:7px;font-size:.78rem;font-weight:600;
+                    background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);
+                    color:#c8c4d8;transition:all .15s ease;white-space:nowrap;user-select:none;"
+             onmouseover="this.style.background='rgba(255,255,255,.09)';this.style.borderColor='rgba(255,255,255,.22)'"
+             onmouseout="this.style.background='rgba(255,255,255,.05)';this.style.borderColor='rgba(255,255,255,.12)'">
+        <i class="fas fa-folder-open" style="color:#e8ba5a;font-size:.8rem;"></i>
+        <span id="fileLabelText">Choose backup file…</span>
+      </label>
+
+      <button type="submit" class="btn btn-ghost btn-sm"
+              style="color:#f87171;border-color:rgba(248,113,113,.3);">
+        <i class="fas fa-upload"></i> Restore
+      </button>
+    </form>
+    <span style="font-size:.74rem;color:#7a7690;">⚠ Restore will replace all data. Keep regular backups.</span>
+
+    <script>
+    function updateFileLabel(input) {
+      var label = document.getElementById('fileLabelText');
+      if (input.files && input.files.length > 0) {
+        var name = input.files[0].name;
+        label.textContent = name.length > 28 ? name.slice(0, 25) + '...' : name;
+        document.getElementById('fileLabel').style.borderColor = 'rgba(232,186,90,.45)';
+        document.getElementById('fileLabel').style.color = '#e8ba5a';
+      } else {
+        label.textContent = 'Choose backup file…';
+        document.getElementById('fileLabel').style.borderColor = 'rgba(255,255,255,.12)';
+        document.getElementById('fileLabel').style.color = '#c8c4d8';
+      }
+    }
+    </script>
+  </div>
+</div>
 
 <!-- Pending Payment Alert -->
 {% if stats.pending_payments > 0 %}

@@ -23,10 +23,10 @@ DATABASE    = 'database.db'
 TOKEN_COOKIE = 'sl_token'
 
 # GCash / Maya — edit these to your real numbers
-GCASH_NUMBER = '0786544633463'
-GCASH_NAME   = 'kurt cedric largo'
-MAYA_NUMBER  = '0786544633463'
-MAYA_NAME    = 'kurt cedric largo'
+GCASH_NUMBER = '0999 999 9999'
+GCASH_NAME   = 'Admin'
+MAYA_NUMBER  = '0999 999 9999'
+MAYA_NAME    = 'Admin'
   
 # Make sqlite3.Row JSON-serializable globally
 class _RowAwareJSON(DefaultJSONProvider):
@@ -946,16 +946,10 @@ def admin_reports():
 
 # ── Backup / Restore ──────────────────────────────────────────────
 
-@app.route('/admin/backup-page')
-@login_required
-def admin_backup_page():
-    """Render the Backup & Restore page."""
-    return render_template('admin/backup.html')
-
 @app.route('/admin/backup')
 @login_required
 def admin_backup():
-
+    """Download a full JSON backup of all database tables."""
     db      = get_db()
     tables  = ['users','equipment','bookings','payments','admin_sessions']
     backup  = {'version': 2, 'created_at': datetime.now().isoformat(), 'tables': {}}

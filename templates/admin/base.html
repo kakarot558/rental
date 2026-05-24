@@ -10,6 +10,27 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous">
+  <style>.dashboard-grid{
+    display:grid;
+    grid-template-columns:minmax(0, 2fr) minmax(280px, 380px);
+    gap:16px;
+    width:100%;
+    overflow:hidden;
+}
+
+.dashboard-grid > div{
+    min-width:0;
+}
+.table-wrap{
+    width:100%;
+    overflow-x:auto;
+}
+.admin-card{
+    width:100%;
+    max-width:100%;
+    overflow:hidden;
+}
+</style>
   {% block extra_head %}{% endblock %}
 </head>
 <body>
@@ -23,7 +44,7 @@
     <div class="sidebar-brand">
       <div class="sidebar-brand-mark"><i class="fas fa-bolt"></i></div>
       <div class="sidebar-brand-text">
-        <h2>SoundLight</h2>
+        <h3>Daz'zle Lights And Sound</h3>
         <p>Admin Panel</p>
       </div>
     </div>
@@ -54,8 +75,8 @@
       </a>
 
       <span class="nav-section-label">System</span>
-      <a href="{{ url_for('admin_backup_page') }}" class="{{ 'active' if request.endpoint=='admin_backup_page' }}">
-        <span class="nav-icon-wrap"><i class="fas fa-database"></i></span> Backup &amp; Restore
+      <a href="{{ url_for('admin_backup') }}">
+        <span class="nav-icon-wrap"><i class="fas fa-database"></i></span> Backup Data
       </a>
 
       <span class="nav-section-label">Site</span>

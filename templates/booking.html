@@ -402,7 +402,7 @@
             <label for="contact_number"><i class="fas fa-phone"></i> Contact Number <span style="color:#f87171">*</span></label>
             <input type="tel" id="contact_number" name="contact_number"
               value="{{ form_data.get('contact_number','') }}"
-              placeholder="+63 912 345 6789" required>
+              placeholder="+63 999 999 9999" required>
             {% if errors.get('contact_number') %}<span class="form-error"><i class="fas fa-exclamation-circle"></i> {{ errors.contact_number }}</span>{% endif %}
           </div>
 
@@ -410,7 +410,7 @@
             <label for="email"><i class="fas fa-envelope"></i> Email Address <span style="color:#f87171">*</span></label>
             <input type="email" id="email" name="email"
               value="{{ form_data.get('email','') }}"
-              placeholder="juan@example.com" required>
+              placeholder="juandelacruz@example.com" required>
             {% if errors.get('email') %}<span class="form-error"><i class="fas fa-exclamation-circle"></i> {{ errors.email }}</span>{% endif %}
           </div>
 
@@ -418,7 +418,7 @@
             <label for="address"><i class="fas fa-map-marker-alt"></i> Event Venue / Address <span style="color:#f87171">*</span></label>
             <input type="text" id="address" name="address"
               value="{{ form_data.get('address','') }}"
-              placeholder="123 Sample Street, Lipa City, Batangas" required>
+              placeholder="123 Sample Street, Castillo, Padre Garcia, Batangas" required>
             {% if errors.get('address') %}<span class="form-error"><i class="fas fa-exclamation-circle"></i> {{ errors.address }}</span>{% endif %}
           </div>
 
