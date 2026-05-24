@@ -23,10 +23,10 @@ DATABASE    = 'database.db'
 TOKEN_COOKIE = 'sl_token'
 
 # GCash / Maya — edit these to your real numbers
-GCASH_NUMBER = '0992 963 4997'
-GCASH_NAME   = 'ERWIL M OLIVARE JR'
-MAYA_NUMBER  = '0992 963 4997'
-MAYA_NAME    = 'ERWIL M OLIVARE JR'
+GCASH_NUMBER = '0786544633463'
+GCASH_NAME   = 'kurt cedric largo'
+MAYA_NUMBER  = '0786544633463'
+MAYA_NAME    = 'kurt cedric largo'
   
 # Make sqlite3.Row JSON-serializable globally
 class _RowAwareJSON(DefaultJSONProvider):
